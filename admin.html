@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Revolución Saludable</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream:       #F3EBE9;
+      --cream-dark:  #E7CEC6;
+      --brown-dark:  #2E1D1B;
+      --brown-mid:   #8a5f56;
+      --brown-light: #B2897D;
+      --accent:      #D8A698;
+      --white:       #ffffff;
+      --border:      #E7CEC6;
+      --red:         #b94040;
+      --red-pale:    #fdf0f0;
+      --green:       #4a7c59;
+      --green-pale:  #edf7f0;
+      --gold:        #c9882a;
+      --gold-pale:   #fdf5e6;
+      --shadow:      0 2px 16px rgba(46,29,27,0.08);
+      --shadow-lg:   0 8px 40px rgba(46,29,27,0.14);
+    }
+
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      font-family: 'Jost', system-ui, sans-serif;
+      background: var(--cream);
+      color: var(--brown-dark);
+      min-height: 100vh;
+    }
+
+    /* ══ PASSWORD GATE ══ */
+    #pwd-gate {
+      position: fixed; inset: 0; background: var(--cream);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100; padding: 24px;
+    }
+    #pwd-gate.hidden { display: none; }
+    .pwd-box {
+      background: var(--white); border-radius: 8px;
+      padding: 36px 40px 32px; max-width: 380px; width: 100%;
+      box-shadow: var(--shadow-lg); text-align: center;
+    }
+    .pwd-leaf { font-size: 1.6rem; margin-bottom: 8px; }
+    .pwd-box h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.6rem; font-weight: 500; color: var(--brown-dark); margin-bottom: 4px;
+    }
+    .pwd-brand { font-size: 0.65rem; letter-spacing: 2.5px; text-transform: uppercase; color: var(--brown-light); margin-bottom: 24px; }
+    .pwd-label { display: block; text-align: left; font-size: 0.65rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--brown-mid); margin-bottom: 6px; }
+    .pwd-input {
+      width: 100%; border: 1px solid var(--border); border-radius: 4px;
+      padding: 10px 14px; font-family: 'Jost', sans-serif; font-size: 0.95rem;
+      color: var(--brown-dark); background: var(--cream); outline: none;
+      transition: border-color 0.2s; -webkit-appearance: none; margin-bottom: 12px;
+    }
+    .pwd-input:focus { border-color: var(--accent); background: var(--white); }
+    .pwd-error { font-size: 0.75rem; color: var(--red); margin-bottom: 10px; display: none; }
+    .btn-primary {
+      width: 100%; background: var(--brown-dark); color: var(--white);
+      border: none; border-radius: 4px; padding: 11px;
+      font-family: 'Jost', sans-serif; font-size: 0.8rem;
+      font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase;
+      cursor: pointer; transition: background 0.2s;
+    }
+    .btn-primary:hover { background: var(--brown-mid); }
+
+    /* ══ LAYOUT ══ */
+    #admin { display: none; max-width: 900px; margin: 0 auto; padding: 36px 20px 80px; }
+    .page-header { text-align: center; margin-bottom: 36px; }
+    .page-header h1 { font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; font-weight: 400; color: var(--brown-dark); }
+    .page-header .sub { font-size: 0.68rem; letter-spacing: 2.5px; text-transform: uppercase; color: var(--brown-light); margin-top: 6px; }
+
+    /* ══ CARDS ══ */
+    .card { background: var(--white); border-radius: 8px; padding: 28px 32px; box-shadow: var(--shadow); margin-bottom: 28px; }
+    .card h2 {
+      font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 500;
+      color: var(--brown-dark); margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border);
+    }
+
+    /* ══ FORM ══ */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-size: 0.65rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--brown-mid); margin-bottom: 6px; }
+    .field input, .field textarea {
+      width: 100%; border: 1px solid var(--border); border-radius: 4px; padding: 9px 13px;
+      font-family: 'Jost', sans-serif; font-size: 0.9rem; color: var(--brown-dark);
+      background: var(--cream); outline: none; transition: border-color 0.2s; -webkit-appearance: none;
+    }
+    .field input:focus, .field textarea:focus { border-color: var(--accent); background: var(--white); }
+    .field textarea { resize: vertical; min-height: 120px; line-height: 1.6; }
+    .field .hint { font-size: 0.72rem; color: var(--brown-light); margin-top: 5px; line-height: 1.4; }
+    .btn-save {
+      width: 100%; background: var(--brown-dark); color: var(--white);
+      border: none; border-radius: 4px; padding: 11px 20px;
+      font-family: 'Jost', sans-serif; font-size: 0.8rem;
+      font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase;
+      cursor: pointer; transition: background 0.2s; margin-top: 8px;
+    }
+    .btn-save:hover { background: var(--brown-mid); }
+    .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+    .feedback { border-radius: 6px; padding: 12px 16px; font-size: 0.85rem; margin-top: 16px; display: none; line-height: 1.4; }
+    .feedback.success { background: var(--green-pale); color: var(--green); display: block; }
+    .feedback.error   { background: var(--red-pale);   color: var(--red);   display: block; }
+    .feedback.warning { background: var(--gold-pale);  color: var(--gold);  display: block; }
+
+    /* ══ CLIENTS LIST ══ */
+    .clients-loading { text-align: center; color: var(--brown-light); font-size: 0.85rem; padding: 20px 0; }
+    .refresh-btn {
+      background: none; border: 1px solid var(--border); border-radius: 4px; padding: 6px 14px;
+      font-family: 'Jost', sans-serif; font-size: 0.75rem; color: var(--brown-mid);
+      cursor: pointer; transition: border-color 0.2s, color 0.2s; float: right;
+    }
+    .refresh-btn:hover { border-color: var(--accent); color: var(--brown-dark); }
+    .client-item { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 14px; overflow: hidden; }
+    .client-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 18px; background: var(--cream); cursor: pointer; user-select: none;
+    }
+    .client-header:hover { background: var(--cream-dark); }
+    .client-email { font-weight: 500; font-size: 0.92rem; color: var(--brown-dark); }
+    .client-status { font-size: 0.68rem; margin-top: 2px; }
+    .client-count { font-size: 0.72rem; color: var(--brown-light); background: var(--cream-dark); border-radius: 20px; padding: 2px 10px; }
+    .client-chevron { color: var(--brown-light); font-size: 0.8rem; transition: transform 0.2s; margin-left: 8px; }
+    .client-item.open .client-chevron { transform: rotate(180deg); }
+    .client-body { display: none; border-top: 1px solid var(--border); }
+    .client-item.open .client-body { display: block; }
+    .client-empty { text-align: center; color: var(--brown-light); font-size: 0.85rem; padding: 32px 0; font-style: italic; }
+
+    /* ══ CLIENT TABS ══ */
+    .client-tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--white); }
+    .client-tab {
+      flex: 1; padding: 10px 16px; text-align: center;
+      font-size: 0.78rem; letter-spacing: 0.8px; text-transform: uppercase;
+      color: var(--brown-light); cursor: pointer; border: none;
+      background: none; font-family: 'Jost', sans-serif;
+      border-bottom: 2px solid transparent; transition: color 0.2s, border-color 0.2s;
+    }
+    .client-tab.active { color: var(--brown-dark); border-bottom-color: var(--accent); }
+    .client-tab-pane { display: none; padding: 16px 18px; }
+    .client-tab-pane.active { display: block; }
+
+    /* ══ HABITS TAGS ══ */
+    .habit-tag {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--cream); border: 1px solid var(--border); border-radius: 20px;
+      padding: 4px 12px; font-size: 0.8rem; color: var(--brown-dark); margin: 4px 4px 4px 0;
+    }
+    .habit-week-badge { font-size: 0.65rem; color: var(--brown-light); }
+    .btn-delete-habit {
+      background: none; border: none; cursor: pointer; color: var(--brown-light);
+      font-size: 0.9rem; padding: 0; line-height: 1; transition: color 0.15s;
+    }
+    .btn-delete-habit:hover { color: var(--red); }
+    .no-habits { font-size: 0.82rem; color: var(--brown-light); font-style: italic; }
+
+    /* ══ PROGRESS TABLE ══ */
+    .progress-week-nav {
+      display: flex; align-items: center; justify-content: center;
+      gap: 14px; margin-bottom: 16px;
+    }
+    .week-nav-btn {
+      background: none; border: 1px solid var(--border); border-radius: 4px;
+      padding: 4px 12px; font-size: 1rem; cursor: pointer;
+      color: var(--brown-mid); transition: border-color 0.2s;
+    }
+    .week-nav-btn:hover { border-color: var(--accent); color: var(--brown-dark); }
+    .week-nav-label { font-size: 0.8rem; color: var(--brown-dark); font-weight: 500; min-width: 200px; text-align: center; }
+
+    .progress-table-wrap { overflow-x: auto; }
+    .progress-table {
+      width: 100%; border-collapse: collapse; font-size: 0.82rem;
+      min-width: 420px;
+    }
+    .progress-table th {
+      padding: 6px 4px; text-align: center; font-weight: 500;
+      font-size: 0.68rem; letter-spacing: 1px; text-transform: uppercase;
+      color: var(--brown-light); border-bottom: 1px solid var(--border);
+    }
+    .progress-table th.habit-col { text-align: left; padding-left: 0; }
+    .progress-table td {
+      padding: 7px 4px; text-align: center; border-bottom: 1px solid var(--cream-dark);
+    }
+    .progress-table td.habit-name {
+      text-align: left; padding-left: 0; font-size: 0.82rem;
+      color: var(--brown-dark); max-width: 180px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .progress-table tr:last-child td { border-bottom: none; }
+
+    .day-dot {
+      display: inline-block; width: 22px; height: 22px; border-radius: 50%;
+      line-height: 22px; font-size: 0.8rem;
+    }
+    .day-dot.done { background: var(--green); color: #fff; }
+    .day-dot.miss { background: var(--cream-dark); color: var(--brown-light); font-size: 0.65rem; }
+    .day-dot.future { background: transparent; color: var(--border); font-size: 0.65rem; }
+
+    .streak-badge {
+      display: inline-block; background: var(--gold-pale); color: var(--gold);
+      border-radius: 10px; padding: 1px 7px; font-size: 0.68rem; margin-left: 6px;
+    }
+
+    .progress-summary {
+      display: flex; gap: 16px; flex-wrap: wrap; margin-top: 14px;
+      padding-top: 12px; border-top: 1px solid var(--cream-dark);
+    }
+    .summary-chip {
+      background: var(--cream); border-radius: 20px; padding: 4px 12px;
+      font-size: 0.75rem; color: var(--brown-mid);
+    }
+    .summary-chip strong { color: var(--brown-dark); }
+
+    .progress-comment {
+      margin-top: 12px; padding: 10px 14px;
+      background: var(--cream); border-radius: 6px; border-left: 3px solid var(--accent);
+      font-size: 0.82rem; color: var(--brown-mid); line-height: 1.5;
+    }
+    .progress-comment span { font-size: 0.68rem; letter-spacing: 1px; text-transform: uppercase; color: var(--brown-light); display: block; margin-bottom: 4px; }
+
+    .no-progress { text-align: center; padding: 24px 0; color: var(--brown-light); font-size: 0.85rem; font-style: italic; }
+
+    .week-info { font-size: 0.72rem; color: var(--brown-light); margin-top: 4px; }
+  </style>
+</head>
+<body>
+
+<!-- ══ PASSWORD GATE ══ -->
+<div id="pwd-gate">
+  <div class="pwd-box">
+    <div class="pwd-leaf">🌿</div>
+    <h1>Panel de Admin</h1>
+    <p class="pwd-brand">Revolución Saludable</p>
+    <label class="pwd-label" for="pwd-input">Contraseña</label>
+    <input type="password" id="pwd-input" class="pwd-input" placeholder="••••••••" autocomplete="current-password" />
+    <div class="pwd-error" id="pwd-error">Contraseña incorrecta.</div>
+    <button class="btn-primary" onclick="checkPassword()">Entrar</button>
+  </div>
+</div>
+
+<!-- ══ ADMIN PANEL ══ -->
+<div id="admin">
+  <div class="page-header">
+    <h1>🌿 Panel de Admin</h1>
+    <p class="sub">Revolución Saludable · Seguimiento de clientes</p>
+  </div>
+
+  <!-- Formulario de precarga -->
+  <div class="card">
+    <h2>✨ Pre-cargar hábitos para un cliente</h2>
+    <div class="form-grid">
+      <div class="field">
+        <label for="client-email">Email del cliente</label>
+        <input type="email" id="client-email" placeholder="cliente@correo.com" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label for="week-input">¿Desde qué semana aparecen los hábitos?</label>
+        <input type="date" id="week-input" />
+        <p class="hint week-info" id="week-info"></p>
+        <p class="hint">El tracker mostrará estos hábitos a partir de la semana elegida.</p>
+      </div>
+    </div>
+    <div class="field">
+      <label for="habits-text">Hábitos a pre-cargar</label>
+      <textarea id="habits-text" placeholder="Tomar 2 litros de agua&#10;Dormir 7-8 horas&#10;Actividad física 30 min&#10;Leer 15 minutos&#10;...un hábito por línea"></textarea>
+      <p class="hint">Escribe un hábito por línea. Se agregarán a los que ya tenga la persona (sin duplicar).</p>
+    </div>
+    <button class="btn-save" id="btn-save" onclick="preloadHabits()">Guardar hábitos para este cliente</button>
+    <div class="feedback" id="form-feedback"></div>
+  </div>
+
+  <!-- Lista de clientes -->
+  <div class="card">
+    <h2>
+      👥 Clientes
+      <button class="refresh-btn" onclick="loadClients()">↻ Actualizar</button>
+    </h2>
+    <div id="clients-container">
+      <p class="clients-loading">Cargando...</p>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════
+   CONFIGURACIÓN
+   ══════════════════════════════════════ */
+// ⚠️ Cambia esta contraseña
+const ADMIN_PASSWORD = 'rs';
+
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyCR7-3h5E1TvsfL_9JxfQ3YQ18dDHkItsI",
+  authDomain:        "planificador-de-comidas-9f2fb.firebaseapp.com",
+  projectId:         "planificador-de-comidas-9f2fb",
+  storageBucket:     "planificador-de-comidas-9f2fb.firebasestorage.app",
+  messagingSenderId: "203566193310",
+  appId:             "1:203566193310:web:7ef291c3dca3ac5d87b98f"
+};
+
+const DAY_LABELS = ['L','M','X','J','V','S','D'];
+
+/* ══════════════════════════════════════
+   FIREBASE
+   ══════════════════════════════════════ */
+let db = null;
+function initFirebase() {
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.firestore();
+  } catch(e) { console.warn('Firebase error:', e); }
+}
+
+/* ══════════════════════════════════════
+   UTILIDADES
+   ══════════════════════════════════════ */
+function emailToDocId(email) {
+  return email.toLowerCase().trim().replace(/\//g, '_');
+}
+function uid() {
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+function getMonday(date) {
+  const d = new Date(typeof date === 'string' ? date + 'T12:00:00' : date);
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  return d.toISOString().slice(0, 10);
+}
+function addDays(dateStr, n) {
+  const d = new Date(dateStr + 'T12:00:00');
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+function formatWeek(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  const sun = new Date(d); sun.setDate(d.getDate() + 6);
+  const fmt = dt => dt.toLocaleDateString('es-CL', { day: 'numeric', month: 'short' });
+  return `${fmt(d)} — ${fmt(sun)}`;
+}
+function formatWeekShort(dateStr) {
+  try {
+    const d = new Date(dateStr + 'T12:00:00');
+    return d.toLocaleDateString('es-CL', { day: 'numeric', month: 'short' });
+  } catch { return dateStr; }
+}
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+
+/* ══════════════════════════════════════
+   PASSWORD GATE
+   ══════════════════════════════════════ */
+function checkPassword() {
+  if (document.getElementById('pwd-input').value === ADMIN_PASSWORD) {
+    document.getElementById('pwd-gate').classList.add('hidden');
+    document.getElementById('admin').style.display = 'block';
+    initWeekPicker();
+    initFirebase();
+    loadClients();
+  } else {
+    document.getElementById('pwd-error').style.display = 'block';
+    document.getElementById('pwd-input').focus();
+  }
+}
+document.getElementById('pwd-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') checkPassword();
+});
+
+/* ══════════════════════════════════════
+   WEEK PICKER (formulario)
+   ══════════════════════════════════════ */
+function initWeekPicker() {
+  const input = document.getElementById('week-input');
+  const monday = getMonday(new Date());
+  input.value = monday;
+  updateWeekInfo(monday);
+  input.addEventListener('change', () => {
+    const m = getMonday(input.value);
+    input.value = m;
+    updateWeekInfo(m);
+  });
+}
+function updateWeekInfo(dateStr) {
+  document.getElementById('week-info').textContent = formatWeek(dateStr);
+}
+
+/* ══════════════════════════════════════
+   PRE-CARGAR HÁBITOS
+   ══════════════════════════════════════ */
+async function preloadHabits() {
+  const email      = document.getElementById('client-email').value.trim().toLowerCase();
+  const habitsText = document.getElementById('habits-text').value.trim();
+  const week       = document.getElementById('week-input').value;
+  const btn        = document.getElementById('btn-save');
+
+  clearFeedback();
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showFeedback('error', '⚠️ Ingresa un email válido.'); return; }
+  if (!habitsText) { showFeedback('error', '⚠️ Escribe al menos un hábito.'); return; }
+  if (!week)       { showFeedback('error', '⚠️ Selecciona una semana.'); return; }
+
+  const lines = habitsText.split('\n').map(l => l.trim()).filter(l => l);
+  if (!lines.length) { showFeedback('error', '⚠️ No se encontraron hábitos válidos.'); return; }
+
+  btn.disabled = true; btn.textContent = 'Guardando...';
+
+  try {
+    const docId = emailToDocId(email);
+    let existingData = null;
+    try {
+      const snap = await db.collection('habitos').doc(docId).get();
+      if (snap.exists) existingData = snap.data();
+    } catch(e) {}
+
+    const newHabits = lines.map(name => ({ id: uid(), name, streak: 0, addedWeek: week }));
+    let finalData, added = 0, skipped = 0;
+
+    if (existingData?.habits?.length) {
+      const existingNames = new Set(existingData.habits.map(h => h.name.toLowerCase()));
+      const toAdd = newHabits.filter(h => {
+        if (existingNames.has(h.name.toLowerCase())) { skipped++; return false; }
+        return true;
+      });
+      added = toAdd.length;
+      finalData = { ...existingData, habits: [...existingData.habits, ...toAdd] };
+    } else {
+      added = newHabits.length;
+      finalData = { habits: newHabits, weeks: {}, stats: { totalPerfectDays: 0 } };
+    }
+
+    if (added === 0) {
+      showFeedback('warning', `⚠️ Esos hábitos ya existen para ${email}.`);
+      return;
+    }
+
+    await db.collection('habitos').doc(docId).set(finalData);
+    let msg = `✅ ${added} hábito${added > 1 ? 's' : ''} pre-cargado${added > 1 ? 's' : ''} para <strong>${email}</strong>.`;
+    if (skipped) msg += ` (${skipped} ya existían)`;
+    showFeedback('success', msg);
+    document.getElementById('habits-text').value = '';
+    document.getElementById('client-email').value = '';
+    loadClients();
+  } catch(e) {
+    showFeedback('error', '❌ Error: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Guardar hábitos para este cliente';
+  }
+}
+
+function clearFeedback() {
+  const el = document.getElementById('form-feedback');
+  el.className = 'feedback'; el.style.display = 'none'; el.innerHTML = '';
+}
+function showFeedback(type, html) {
+  const el = document.getElementById('form-feedback');
+  el.className = 'feedback ' + type; el.innerHTML = html;
+}
+
+/* ══════════════════════════════════════
+   CARGAR CLIENTES
+   ══════════════════════════════════════ */
+async function loadClients() {
+  const container = document.getElementById('clients-container');
+  container.innerHTML = '<p class="clients-loading">Cargando clientes...</p>';
+  try {
+    const [habitosSnap, usuariosSnap] = await Promise.all([
+      db.collection('habitos').get(),
+      db.collection('usuarios').get()
+    ]);
+    const usuarios = {};
+    usuariosSnap.forEach(doc => { usuarios[doc.id] = doc.data(); });
+
+    const clients = [];
+    habitosSnap.forEach(doc => {
+      const d = doc.data();
+      if (d?.habits) clients.push({
+        docId:   doc.id,
+        habits:  d.habits  || [],
+        weeks:   d.weeks   || {},
+        stats:   d.stats   || {},
+        usuario: usuarios[doc.id] || null
+      });
+    });
+
+    if (!clients.length) {
+      container.innerHTML = '<p class="client-empty">Aún no hay clientes con hábitos cargados.</p>';
+      return;
+    }
+
+    clients.sort((a, b) => {
+      const an = a.usuario?.name || a.docId;
+      const bn = b.usuario?.name || b.docId;
+      return an.localeCompare(bn);
+    });
+
+    container.innerHTML = '';
+    clients.forEach(c => renderClientItem(c, container));
+  } catch(e) {
+    container.innerHTML = `<p class="client-empty" style="color:var(--red)">Error: ${e.message}</p>`;
+  }
+}
+
+/* ══════════════════════════════════════
+   RENDER CLIENTE
+   ══════════════════════════════════════ */
+// Semana activa por cliente (para el panel de progreso)
+const clientViewWeek = {};
+
+function renderClientItem(client, container) {
+  if (!clientViewWeek[client.docId]) clientViewWeek[client.docId] = getMonday(new Date());
+
+  const email      = client.usuario?.email || client.docId;
+  const name       = client.usuario?.name  || null;
+  const habits     = client.habits || [];
+  const registered = !!client.usuario;
+
+  const div = document.createElement('div');
+  div.className = 'client-item';
+  div.id = 'client-' + client.docId;
+
+  div.innerHTML = `
+    <div class="client-header" onclick="toggleClient('${client.docId}')">
+      <div>
+        <div class="client-email">${name ? '<strong>' + name + '</strong> · ' : ''}${email}</div>
+        <div class="client-status" style="color:${registered ? 'var(--green)' : 'var(--brown-light)'}">
+          ${registered ? '✓ Registrado' : '⏳ Aún no se ha logueado'}
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="client-count">${habits.length} hábito${habits.length !== 1 ? 's' : ''}</span>
+        <span class="client-chevron">▼</span>
+      </div>
+    </div>
+    <div class="client-body">
+      <div class="client-tabs">
+        <button class="client-tab active" onclick="switchTab('${client.docId}','habits',this)">📋 Hábitos</button>
+        <button class="client-tab"        onclick="switchTab('${client.docId}','progress',this)">📊 Progreso semanal</button>
+      </div>
+
+      <!-- TAB: Hábitos -->
+      <div class="client-tab-pane active" id="tab-habits-${client.docId}">
+        ${habits.length === 0
+          ? '<p class="no-habits">Sin hábitos cargados.</p>'
+          : habits.map((h, i) => `
+              <span class="habit-tag">
+                ${h.name}
+                ${h.addedWeek ? '<span class="habit-week-badge">· desde ' + formatWeekShort(h.addedWeek) + '</span>' : ''}
+                <button class="btn-delete-habit" title="Eliminar" onclick="deleteHabit('${client.docId}',${i},event)">✕</button>
+              </span>`).join('')
+        }
+      </div>
+
+      <!-- TAB: Progreso -->
+      <div class="client-tab-pane" id="tab-progress-${client.docId}">
+        ${renderProgressHTML(client, clientViewWeek[client.docId])}
+      </div>
+    </div>
+  `;
+  container.appendChild(div);
+}
+
+function switchTab(docId, tab, btn) {
+  const body = document.querySelector('#client-' + docId + ' .client-body');
+  body.querySelectorAll('.client-tab').forEach(t => t.classList.remove('active'));
+  body.querySelectorAll('.client-tab-pane').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  body.querySelector('#tab-' + tab + '-' + docId).classList.add('active');
+}
+
+function toggleClient(docId) {
+  const item = document.getElementById('client-' + docId);
+  item.classList.toggle('open');
+}
+
+/* ══════════════════════════════════════
+   RENDER PROGRESO SEMANAL
+   ══════════════════════════════════════ */
+function renderProgressHTML(client, weekStr) {
+  const habits  = client.habits || [];
+  const weeks   = client.weeks  || {};
+  const weekData = weeks[weekStr] || {};
+  const today   = todayStr();
+
+  // Hábitos activos en esta semana (addedWeek <= weekStr y no eliminados antes)
+  const activeHabits = habits.filter(h => {
+    if (!h.addedWeek || h.addedWeek > weekStr) return false;
+    if (h.deletedWeek && h.deletedWeek <= weekStr) return false;
+    return true;
+  });
+
+  const weekLabel = formatWeek(weekStr);
+  const weekEnd   = addDays(weekStr, 6);
+
+  // Calcular días del lunes al domingo de la semana
+  const dayDates = Array.from({ length: 7 }, (_, i) => addDays(weekStr, i));
+
+  // Construir tabla
+  let tableRows = '';
+  let totalChecks = 0, totalPossible = 0, perfectDays = 0;
+
+  if (activeHabits.length > 0) {
+    // Contar días perfectos (todos los hábitos marcados ese día)
+    for (let di = 0; di < 7; di++) {
+      const dayDate = dayDates[di];
+      if (dayDate > today) break;
+      const allDone = activeHabits.every(h => {
+        const checks = weekData[h.id];
+        return checks && checks[di] === true;
+      });
+      if (allDone) perfectDays++;
+    }
+
+    tableRows = activeHabits.map(h => {
+      const checks = weekData[h.id] || [];
+      let rowChecks = 0;
+      const cells = dayDates.map((dayDate, di) => {
+        const isFuture = dayDate > today;
+        const done     = checks[di] === true;
+        if (!isFuture) totalPossible++;
+        if (done && !isFuture) { totalChecks++; rowChecks++; }
+        const cls  = isFuture ? 'future' : (done ? 'done' : 'miss');
+        const icon = isFuture ? '·' : (done ? '✓' : '○');
+        return `<td><span class="day-dot ${cls}">${icon}</span></td>`;
+      }).join('');
+
+      // Racha del hábito
+      const streak = h.streak || 0;
+      const streakBadge = streak > 0 ? `<span class="streak-badge">🔥 ${streak}</span>` : '';
+
+      return `<tr>
+        <td class="habit-name" title="${h.name}">${h.name}${streakBadge}</td>
+        ${cells}
+        <td style="text-align:center;font-size:0.78rem;color:var(--brown-light)">${rowChecks}/7</td>
+      </tr>`;
+    }).join('');
+  }
+
+  const pct = totalPossible > 0 ? Math.round(totalChecks / totalPossible * 100) : null;
+  const comment = weekData.__comment || '';
+
+  const noDataMsg = activeHabits.length === 0
+    ? '<p class="no-progress">No hay hábitos activos para esta semana.</p>'
+    : (Object.keys(weekData).length === 0
+        ? '<p class="no-progress">El cliente aún no registró actividad esta semana.</p>'
+        : '');
+
+  return `
+    <div class="progress-week-nav">
+      <button class="week-nav-btn" onclick="changeWeek('${client.docId}', -7)">←</button>
+      <div class="week-nav-label">${weekLabel}</div>
+      <button class="week-nav-btn" onclick="changeWeek('${client.docId}', +7)">→</button>
+    </div>
+
+    ${noDataMsg}
+
+    ${activeHabits.length > 0 ? `
+    <div class="progress-table-wrap">
+      <table class="progress-table">
+        <thead>
+          <tr>
+            <th class="habit-col">Hábito</th>
+            ${DAY_LABELS.map(d => `<th>${d}</th>`).join('')}
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>${tableRows}</tbody>
+      </table>
+    </div>
+
+    ${pct !== null ? `
+    <div class="progress-summary">
+      <span class="summary-chip">Cumplimiento: <strong>${pct}%</strong></span>
+      <span class="summary-chip">Días perfectos: <strong>${perfectDays}</strong></span>
+      ${perfectDays === 7 ? '<span class="summary-chip" style="color:var(--gold)">⭐ Semana perfecta</span>' : ''}
+    </div>` : ''}
+
+    ${comment ? `
+    <div class="progress-comment">
+      <span>📝 Notas del cliente</span>
+      ${comment}
+    </div>` : ''}
+    ` : ''}
+  `;
+}
+
+function changeWeek(docId, days) {
+  const currentWeek = clientViewWeek[docId];
+  const newWeek = addDays(currentWeek, days);
+  clientViewWeek[docId] = newWeek;
+
+  // Buscar los datos del cliente en el DOM (re-rendear solo la pestaña de progreso)
+  // Los datos están en la colección que ya cargamos; necesitamos recargarlos del Firestore
+  refreshClientProgress(docId, newWeek);
+}
+
+async function refreshClientProgress(docId, weekStr) {
+  const pane = document.getElementById('tab-progress-' + docId);
+  if (!pane) return;
+  pane.innerHTML = '<p class="no-progress" style="padding:20px 0">Cargando...</p>';
+  try {
+    const snap = await db.collection('habitos').doc(docId).get();
+    if (!snap.exists) { pane.innerHTML = '<p class="no-progress">Sin datos.</p>'; return; }
+    const d = snap.data();
+    const client = { docId, habits: d.habits || [], weeks: d.weeks || {}, stats: d.stats || {} };
+    pane.innerHTML = renderProgressHTML(client, weekStr);
+  } catch(e) {
+    pane.innerHTML = `<p class="no-progress" style="color:var(--red)">Error: ${e.message}</p>`;
+  }
+}
+
+/* ══════════════════════════════════════
+   ELIMINAR HÁBITO
+   ══════════════════════════════════════ */
+async function deleteHabit(docId, habitIndex, event) {
+  event.stopPropagation();
+  if (!confirm('¿Eliminar este hábito del cliente?')) return;
+  try {
+    const snap = await db.collection('habitos').doc(docId).get();
+    if (!snap.exists) return;
+    const data = snap.data();
+    data.habits.splice(habitIndex, 1);
+    await db.collection('habitos').doc(docId).set(data);
+    loadClients();
+  } catch(e) {
+    alert('Error al eliminar: ' + e.message);
+  }
+}
+</script>
+</body>
+</html>
