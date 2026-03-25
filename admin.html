@@ -326,6 +326,10 @@ function initFirebase() {
 function emailToDocId(email) {
   return email.toLowerCase().trim().replace(/\//g, '_');
 }
+// ID seguro para usar en atributos HTML y selectores CSS (sin @, puntos, etc.)
+function safeId(str) {
+  return 'c_' + str.replace(/[^a-zA-Z0-9_-]/g, '_');
+}
 function uid() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
@@ -522,12 +526,14 @@ function renderClientItem(client, container) {
   const habits     = client.habits || [];
   const registered = !!client.usuario;
 
+  const sid = safeId(client.docId);   // ID seguro para DOM
+
   const div = document.createElement('div');
   div.className = 'client-item';
-  div.id = 'client-' + client.docId;
+  div.id = sid;
 
   div.innerHTML = `
-    <div class="client-header" onclick="toggleClient('${client.docId}')">
+    <div class="client-header" onclick="toggleClient('${sid}')">
       <div>
         <div class="client-email">${name ? '<strong>' + name + '</strong> · ' : ''}${email}</div>
         <div class="client-status" style="color:${registered ? 'var(--green)' : 'var(--brown-light)'}">
@@ -541,12 +547,12 @@ function renderClientItem(client, container) {
     </div>
     <div class="client-body">
       <div class="client-tabs">
-        <button class="client-tab active" onclick="switchTab('${client.docId}','habits',this)">📋 Hábitos</button>
-        <button class="client-tab"        onclick="switchTab('${client.docId}','progress',this)">📊 Progreso semanal</button>
+        <button class="client-tab active" onclick="switchTab('${sid}','habits',this)">📋 Hábitos</button>
+        <button class="client-tab"        onclick="switchTab('${sid}','progress',this)">📊 Progreso semanal</button>
       </div>
 
       <!-- TAB: Hábitos -->
-      <div class="client-tab-pane active" id="tab-habits-${client.docId}">
+      <div class="client-tab-pane active" id="tab-habits-${sid}">
         ${habits.length === 0
           ? '<p class="no-habits">Sin hábitos cargados.</p>'
           : habits.map((h, i) => `
@@ -559,7 +565,7 @@ function renderClientItem(client, container) {
       </div>
 
       <!-- TAB: Progreso -->
-      <div class="client-tab-pane" id="tab-progress-${client.docId}">
+      <div class="client-tab-pane" id="tab-progress-${sid}">
         ${renderProgressHTML(client, clientViewWeek[client.docId])}
       </div>
     </div>
@@ -567,17 +573,17 @@ function renderClientItem(client, container) {
   container.appendChild(div);
 }
 
-function switchTab(docId, tab, btn) {
-  const body = document.querySelector('#client-' + docId + ' .client-body');
+function switchTab(sid, tab, btn) {
+  const item = document.getElementById(sid);
+  const body = item.querySelector('.client-body');
   body.querySelectorAll('.client-tab').forEach(t => t.classList.remove('active'));
   body.querySelectorAll('.client-tab-pane').forEach(p => p.classList.remove('active'));
   btn.classList.add('active');
-  body.querySelector('#tab-' + tab + '-' + docId).classList.add('active');
+  document.getElementById('tab-' + tab + '-' + sid).classList.add('active');
 }
 
-function toggleClient(docId) {
-  const item = document.getElementById('client-' + docId);
-  item.classList.toggle('open');
+function toggleClient(sid) {
+  document.getElementById(sid).classList.toggle('open');
 }
 
 /* ══════════════════════════════════════
@@ -695,14 +701,12 @@ function changeWeek(docId, days) {
   const currentWeek = clientViewWeek[docId];
   const newWeek = addDays(currentWeek, days);
   clientViewWeek[docId] = newWeek;
-
-  // Buscar los datos del cliente en el DOM (re-rendear solo la pestaña de progreso)
-  // Los datos están en la colección que ya cargamos; necesitamos recargarlos del Firestore
   refreshClientProgress(docId, newWeek);
 }
 
 async function refreshClientProgress(docId, weekStr) {
-  const pane = document.getElementById('tab-progress-' + docId);
+  const sid  = safeId(docId);
+  const pane = document.getElementById('tab-progress-' + sid);
   if (!pane) return;
   pane.innerHTML = '<p class="no-progress" style="padding:20px 0">Cargando...</p>';
   try {
