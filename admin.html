@@ -595,9 +595,11 @@ function renderProgressHTML(client, weekStr) {
   const weekData = weeks[weekStr] || {};
   const today   = todayStr();
 
-  // Hábitos activos en esta semana (addedWeek <= weekStr y no eliminados antes)
+  // Hábitos activos en esta semana.
+  // Si no tiene addedWeek (agregado por el cliente directamente), se considera siempre activo.
   const activeHabits = habits.filter(h => {
-    if (!h.addedWeek || h.addedWeek > weekStr) return false;
+    const desde = h.addedWeek || '2000-01-01';
+    if (desde > weekStr) return false;
     if (h.deletedWeek && h.deletedWeek <= weekStr) return false;
     return true;
   });
