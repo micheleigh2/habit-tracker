@@ -558,9 +558,13 @@ function renderClientItem(client, container) {
           ? '<p class="no-habits">Sin hábitos cargados.</p>'
           : habits.map((h, i) => `
               <span class="habit-tag">
-                ${h.name}
+                ${h.name.replace(/&/g,'&amp;').replace(/</g,'&lt;')}
                 ${h.addedWeek ? '<span class="habit-week-badge">· desde ' + formatWeekShort(h.addedWeek) + '</span>' : ''}
-                <button class="btn-delete-habit" title="Eliminar" onclick="deleteHabit('${client.docId}','${h.id}','${h.name.replace(/'/g,"\\'")}',event)">✕</button>
+                <button class="btn-delete-habit" title="Eliminar"
+                  data-doc-id="${client.docId.replace(/"/g,'&quot;')}"
+                  data-habit-id="${h.id}"
+                  data-habit-name="${h.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}"
+                  onclick="deleteHabit(this,event)">✕</button>
               </span>`).join('')
         }
       </div>
@@ -724,10 +728,11 @@ async function refreshClientProgress(docId, weekStr) {
     const d     = snap.data();
     const weeks = d.weeks || {};
 
-    // Si la semana pedida no tiene datos, ir a la más reciente que sí tenga
+    // Si la semana pedida no tiene datos (o está vacía), ir a la más reciente con actividad
     let viewWeek = weekStr;
-    if (!weeks[weekStr]) {
-      const weeksWithData = Object.keys(weeks).sort();
+    const hasActivity = w => w && Object.keys(w).some(k => k !== '__comment');
+    if (!hasActivity(weeks[weekStr])) {
+      const weeksWithData = Object.keys(weeks).filter(k => hasActivity(weeks[k])).sort();
       if (weeksWithData.length > 0) {
         viewWeek = weeksWithData[weeksWithData.length - 1];   // la más reciente
         clientViewWeek[docId] = viewWeek;
@@ -744,10 +749,12 @@ async function refreshClientProgress(docId, weekStr) {
 /* ══════════════════════════════════════
    ELIMINAR HÁBITO
    ══════════════════════════════════════ */
-async function deleteHabit(docId, habitId, habitName, event) {
+async function deleteHabit(btn, event) {
   event.stopPropagation();
+  const docId     = btn.dataset.docId;
+  const habitId   = btn.dataset.habitId;
+  const habitName = btn.dataset.habitName;
   if (!confirm(`¿Eliminar el hábito "${habitName}" de este cliente?\n\nEsto no borra los días ya marcados, solo el hábito.`)) return;
-  const btn = event.target;
   btn.textContent = '…'; btn.disabled = true;
   try {
     const snap = await db.collection('habitos').doc(docId).get();
