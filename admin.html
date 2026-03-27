@@ -162,7 +162,22 @@
       font-size: 0.9rem; padding: 0; line-height: 1; transition: color 0.15s;
     }
     .btn-delete-habit:hover { color: var(--red); }
+    .btn-restore-habit {
+      background: none; border: 1px solid var(--border); border-radius: 10px;
+      cursor: pointer; color: var(--brown-light); font-size: 0.7rem; padding: 1px 7px;
+      line-height: 1.5; transition: color 0.15s, border-color 0.15s;
+      font-family: 'Jost', sans-serif;
+    }
+    .btn-restore-habit:hover { color: var(--green); border-color: var(--green); }
+    .habit-tag.habit-hidden { opacity: 0.55; background: var(--cream-dark); }
     .no-habits { font-size: 0.82rem; color: var(--brown-light); font-style: italic; }
+    /* hide button inside progress table */
+    .btn-hide-week {
+      background: none; border: none; cursor: pointer; color: var(--cream-dark);
+      font-size: 0.85rem; padding: 0 4px; line-height: 1; transition: color 0.15s;
+    }
+    .btn-hide-week:hover { color: var(--red); }
+    .progress-table td.action-col { text-align: center; padding: 0; width: 24px; }
 
     /* ══ PROGRESS TABLE ══ */
     .progress-week-nav {
@@ -556,16 +571,26 @@ function renderClientItem(client, container) {
       <div class="client-tab-pane active" id="tab-habits-${sid}">
         ${habits.length === 0
           ? '<p class="no-habits">Sin hábitos cargados.</p>'
-          : habits.map((h, i) => `
-              <span class="habit-tag">
-                ${h.name.replace(/&/g,'&amp;').replace(/</g,'&lt;')}
+          : habits.map((h, i) => {
+              const safeDocId  = client.docId.replace(/"/g,'&quot;');
+              const safeName   = h.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+              const displayName = h.name.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+              const isHidden   = !!h.deletedWeek;
+              return `
+              <span class="habit-tag${isHidden ? ' habit-hidden' : ''}">
+                ${displayName}
                 ${h.addedWeek ? '<span class="habit-week-badge">· desde ' + formatWeekShort(h.addedWeek) + '</span>' : ''}
-                <button class="btn-delete-habit" title="Eliminar"
-                  data-doc-id="${client.docId.replace(/"/g,'&quot;')}"
-                  data-habit-id="${h.id}"
-                  data-habit-name="${h.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}"
-                  onclick="deleteHabit(this,event)">✕</button>
-              </span>`).join('')
+                ${isHidden ? '<span class="habit-week-badge" style="color:var(--red)">· oculto desde ' + formatWeekShort(h.deletedWeek) + '</span>' : ''}
+                ${isHidden
+                  ? `<button class="btn-restore-habit" title="Reactivar hábito"
+                       data-doc-id="${safeDocId}" data-habit-id="${h.id}"
+                       onclick="restoreHabit(this,event)">↺ reactivar</button>`
+                  : `<button class="btn-delete-habit" title="Eliminar para siempre"
+                       data-doc-id="${safeDocId}" data-habit-id="${h.id}" data-habit-name="${safeName}"
+                       onclick="deleteHabit(this,event)">✕</button>`
+                }
+              </span>`;
+            }).join('')
         }
       </div>
 
@@ -654,10 +679,16 @@ function renderProgressHTML(client, weekStr) {
       const streak = h.streak || 0;
       const streakBadge = streak > 0 ? `<span class="streak-badge">🔥 ${streak}</span>` : '';
 
+      const safeDocId2  = client.docId.replace(/"/g,'&quot;');
+      const safeName2   = h.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
       return `<tr>
         <td class="habit-name" title="${h.name}">${h.name}${streakBadge}</td>
         ${cells}
         <td style="text-align:center;font-size:0.78rem;color:var(--brown-light)">${rowChecks}/7</td>
+        <td class="action-col"><button class="btn-hide-week" title="Ocultar desde esta semana"
+          data-doc-id="${safeDocId2}" data-habit-id="${h.id}"
+          data-habit-name="${safeName2}" data-week="${weekStr}"
+          onclick="hideHabitFromWeek(this,event)">×</button></td>
       </tr>`;
     }).join('');
   }
@@ -688,6 +719,7 @@ function renderProgressHTML(client, weekStr) {
             <th class="habit-col">Hábito</th>
             ${DAY_LABELS.map(d => `<th>${d}</th>`).join('')}
             <th>Total</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>${tableRows}</tbody>
@@ -749,6 +781,93 @@ async function refreshClientProgress(docId, weekStr) {
 /* ══════════════════════════════════════
    ELIMINAR HÁBITO
    ══════════════════════════════════════ */
+/* ══════════════════════════════════════
+   OCULTAR HÁBITO DESDE UNA SEMANA
+   ══════════════════════════════════════ */
+async function hideHabitFromWeek(btn, event) {
+  event.stopPropagation();
+  const docId     = btn.dataset.docId;
+  const habitId   = btn.dataset.habitId;
+  const habitName = btn.dataset.habitName;
+  const weekStr   = btn.dataset.week;
+  if (!confirm(`¿Ocultar "${habitName}" a partir de la semana del ${formatWeek(weekStr)}?\n\nEl hábito seguirá visible en semanas anteriores.`)) return;
+  btn.textContent = '…'; btn.disabled = true;
+  try {
+    const snap = await db.collection('habitos').doc(docId).get();
+    if (!snap.exists) { alert('No se encontró el documento.'); return; }
+    const data  = snap.data();
+    const habit = data.habits.find(h => h.id === habitId);
+    if (!habit) { alert('Hábito no encontrado.'); return; }
+    habit.deletedWeek = weekStr;
+    await db.collection('habitos').doc(docId).set(data);
+    // Refresca la pestaña de progreso (el hábito desaparece)
+    refreshClientProgress(docId, weekStr);
+    // Actualiza el tag en la pestaña de hábitos si está visible
+    _refreshHabitsPane(docId, data.habits);
+  } catch(e) {
+    btn.textContent = '×'; btn.disabled = false;
+    alert('Error: ' + e.message);
+  }
+}
+
+/* ══════════════════════════════════════
+   REACTIVAR HÁBITO
+   ══════════════════════════════════════ */
+async function restoreHabit(btn, event) {
+  event.stopPropagation();
+  const docId   = btn.dataset.docId;
+  const habitId = btn.dataset.habitId;
+  btn.textContent = '…'; btn.disabled = true;
+  try {
+    const snap = await db.collection('habitos').doc(docId).get();
+    if (!snap.exists) { alert('No se encontró el documento.'); return; }
+    const data  = snap.data();
+    const habit = data.habits.find(h => h.id === habitId);
+    if (habit) delete habit.deletedWeek;
+    await db.collection('habitos').doc(docId).set(data);
+    _refreshHabitsPane(docId, data.habits);
+  } catch(e) {
+    btn.textContent = '↺ reactivar'; btn.disabled = false;
+    alert('Error: ' + e.message);
+  }
+}
+
+// Recarga en el DOM la pestaña de hábitos de un cliente (sin recargar toda la lista)
+function _refreshHabitsPane(docId, habits) {
+  const sid      = safeId(docId);
+  const pane     = document.getElementById('tab-habits-' + sid);
+  if (!pane) return;
+  // Rebuild tags
+  const cliente = { docId, habits };
+  const safeDocId = docId.replace(/"/g,'&quot;');
+  if (habits.length === 0) {
+    pane.innerHTML = '<p class="no-habits">Sin hábitos cargados.</p>';
+    return;
+  }
+  pane.innerHTML = habits.map(h => {
+    const safeName   = h.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+    const displayName = h.name.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+    const isHidden   = !!h.deletedWeek;
+    return `
+    <span class="habit-tag${isHidden ? ' habit-hidden' : ''}">
+      ${displayName}
+      ${h.addedWeek ? '<span class="habit-week-badge">· desde ' + formatWeekShort(h.addedWeek) + '</span>' : ''}
+      ${isHidden ? '<span class="habit-week-badge" style="color:var(--red)">· oculto desde ' + formatWeekShort(h.deletedWeek) + '</span>' : ''}
+      ${isHidden
+        ? `<button class="btn-restore-habit" title="Reactivar hábito"
+             data-doc-id="${safeDocId}" data-habit-id="${h.id}"
+             onclick="restoreHabit(this,event)">↺ reactivar</button>`
+        : `<button class="btn-delete-habit" title="Eliminar para siempre"
+             data-doc-id="${safeDocId}" data-habit-id="${h.id}" data-habit-name="${safeName}"
+             onclick="deleteHabit(this,event)">✕</button>`
+      }
+    </span>`;
+  }).join('');
+  // Update habit counter
+  const countEl = document.querySelector('#' + sid + ' .client-count');
+  if (countEl) countEl.textContent = habits.length + ' hábito' + (habits.length !== 1 ? 's' : '');
+}
+
 async function deleteHabit(btn, event) {
   event.stopPropagation();
   const docId     = btn.dataset.docId;
