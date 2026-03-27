@@ -531,6 +531,7 @@ function renderClientItem(client, container) {
   const div = document.createElement('div');
   div.className = 'client-item';
   div.id = sid;
+  div.dataset.docId = client.docId;   // guardamos docId real para Firestore
 
   div.innerHTML = `
     <div class="client-header" onclick="toggleClient('${sid}')">
@@ -559,7 +560,7 @@ function renderClientItem(client, container) {
               <span class="habit-tag">
                 ${h.name}
                 ${h.addedWeek ? '<span class="habit-week-badge">· desde ' + formatWeekShort(h.addedWeek) + '</span>' : ''}
-                <button class="btn-delete-habit" title="Eliminar" onclick="deleteHabit('${client.docId}',${i},event)">✕</button>
+                <button class="btn-delete-habit" title="Eliminar" onclick="deleteHabit('${client.docId}','${h.id}','${h.name.replace(/'/g,"\\'")}',event)">✕</button>
               </span>`).join('')
         }
       </div>
@@ -580,6 +581,12 @@ function switchTab(sid, tab, btn) {
   body.querySelectorAll('.client-tab-pane').forEach(p => p.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('tab-' + tab + '-' + sid).classList.add('active');
+  // Al abrir progreso, siempre recarga datos frescos desde Firestore
+  if (tab === 'progress') {
+    const docId = item.dataset.docId;
+    const week  = clientViewWeek[docId] || getMonday(new Date());
+    refreshClientProgress(docId, week);
+  }
 }
 
 function toggleClient(sid) {
@@ -689,13 +696,13 @@ function renderProgressHTML(client, weekStr) {
       <span class="summary-chip">Días perfectos: <strong>${perfectDays}</strong></span>
       ${perfectDays === 7 ? '<span class="summary-chip" style="color:var(--gold)">⭐ Semana perfecta</span>' : ''}
     </div>` : ''}
+    ` : ''}
 
     ${comment ? `
     <div class="progress-comment">
       <span>📝 Notas del cliente</span>
       ${comment}
     </div>` : ''}
-    ` : ''}
   `;
 }
 
@@ -713,29 +720,50 @@ async function refreshClientProgress(docId, weekStr) {
   pane.innerHTML = '<p class="no-progress" style="padding:20px 0">Cargando...</p>';
   try {
     const snap = await db.collection('habitos').doc(docId).get();
-    if (!snap.exists) { pane.innerHTML = '<p class="no-progress">Sin datos.</p>'; return; }
-    const d = snap.data();
-    const client = { docId, habits: d.habits || [], weeks: d.weeks || {}, stats: d.stats || {} };
-    pane.innerHTML = renderProgressHTML(client, weekStr);
+    if (!snap.exists) { pane.innerHTML = '<p class="no-progress">Sin datos en Firestore aún.</p>'; return; }
+    const d     = snap.data();
+    const weeks = d.weeks || {};
+
+    // Si la semana pedida no tiene datos, ir a la más reciente que sí tenga
+    let viewWeek = weekStr;
+    if (!weeks[weekStr]) {
+      const weeksWithData = Object.keys(weeks).sort();
+      if (weeksWithData.length > 0) {
+        viewWeek = weeksWithData[weeksWithData.length - 1];   // la más reciente
+        clientViewWeek[docId] = viewWeek;
+      }
+    }
+
+    const client = { docId, habits: d.habits || [], weeks, stats: d.stats || {} };
+    pane.innerHTML = renderProgressHTML(client, viewWeek);
   } catch(e) {
-    pane.innerHTML = `<p class="no-progress" style="color:var(--red)">Error: ${e.message}</p>`;
+    pane.innerHTML = `<p class="no-progress" style="color:var(--red)">Error al cargar: ${e.message}</p>`;
   }
 }
 
 /* ══════════════════════════════════════
    ELIMINAR HÁBITO
    ══════════════════════════════════════ */
-async function deleteHabit(docId, habitIndex, event) {
+async function deleteHabit(docId, habitId, habitName, event) {
   event.stopPropagation();
-  if (!confirm('¿Eliminar este hábito del cliente?')) return;
+  if (!confirm(`¿Eliminar el hábito "${habitName}" de este cliente?\n\nEsto no borra los días ya marcados, solo el hábito.`)) return;
+  const btn = event.target;
+  btn.textContent = '…'; btn.disabled = true;
   try {
     const snap = await db.collection('habitos').doc(docId).get();
-    if (!snap.exists) return;
+    if (!snap.exists) { alert('No se encontró el documento.'); return; }
     const data = snap.data();
-    data.habits.splice(habitIndex, 1);
+    // Borrar por ID (no por índice, para evitar desfases)
+    data.habits = data.habits.filter(h => h.id !== habitId);
     await db.collection('habitos').doc(docId).set(data);
-    loadClients();
+    // Quitar el tag del DOM directamente (sin recargar toda la lista)
+    btn.closest('.habit-tag').remove();
+    // Actualizar contador
+    const sid      = safeId(docId);
+    const countEl  = document.querySelector('#' + sid + ' .client-count');
+    if (countEl) countEl.textContent = data.habits.length + ' hábito' + (data.habits.length !== 1 ? 's' : '');
   } catch(e) {
+    btn.textContent = '✕'; btn.disabled = false;
     alert('Error al eliminar: ' + e.message);
   }
 }
