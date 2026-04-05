@@ -83,6 +83,12 @@
       cursor: pointer; margin-top: 5px; transition: background 0.2s; min-height: var(--touch);
     }
     .btn-gate:hover { background: var(--accent-dark); }
+    .btn-gate:disabled { opacity: 0.55; cursor: not-allowed; }
+    .btn-gate-back {
+      width: 100%; background: none; border: none; padding: 6px;
+      font-family: 'Jost', sans-serif; font-size: 0.75rem; color: var(--brown-light);
+      cursor: pointer; margin-top: 2px; text-decoration: underline;
+    }
     .gate-privacy { margin-top: 8px; font-size: 0.7rem; color: var(--brown-light); line-height: 1.35; }
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
@@ -424,19 +430,31 @@
     <div class="gate-leaf">🌿</div>
     <h1>Tracker de Hábitos</h1>
     <p class="gate-brand">Revolución Saludable</p>
-    <p class="gate-desc">Ingresa tu nombre y mail para personalizar tu tracker. Tus datos y hábitos quedan guardados en la nube — podrás acceder desde cualquier dispositivo.</p>
-    <div class="gate-field">
-      <label for="gate-name">Nombre</label>
-      <input type="text" id="gate-name" placeholder="Tu nombre" autocomplete="given-name" />
-      <div class="gate-error" id="err-name">Por favor ingresa tu nombre.</div>
+
+    <!-- Paso 1: solo email (siempre visible primero) -->
+    <div id="gate-s1">
+      <p class="gate-desc">Ingresá tu correo para acceder a tu tracker. Tus hábitos quedan guardados en la nube.</p>
+      <div class="gate-field">
+        <label for="gate-email">Correo electrónico</label>
+        <input type="email" id="gate-email" placeholder="tu@correo.com" autocomplete="email" />
+        <div class="gate-error" id="err-email">Por favor ingresá un correo válido.</div>
+      </div>
+      <button class="btn-gate" id="btn-continuar" onclick="checkEmailStep()">Continuar →</button>
     </div>
-    <div class="gate-field">
-      <label for="gate-email">Correo electrónico</label>
-      <input type="email" id="gate-email" placeholder="tu@correo.com" autocomplete="email" />
-      <div class="gate-error" id="err-email">Por favor ingresa un correo válido.</div>
+
+    <!-- Paso 2: solo para nuevas usuarias (nombre) -->
+    <div id="gate-s2" style="display:none">
+      <p class="gate-desc">¡Bienvenida! Es tu primera vez. ¿Cómo te llamás?</p>
+      <div class="gate-field">
+        <label for="gate-name">Nombre</label>
+        <input type="text" id="gate-name" placeholder="Tu nombre" autocomplete="given-name" />
+        <div class="gate-error" id="err-name">Por favor ingresá tu nombre.</div>
+      </div>
+      <button class="btn-gate" id="btn-empezar" onclick="submitGateNew()">Empezar →</button>
+      <button class="btn-gate-back" onclick="showGateStep1()">← Cambiar correo</button>
     </div>
-    <button class="btn-gate" onclick="submitGate()">Acceder a mi Tracker</button>
-    <p class="gate-privacy">🔒 Solo te lo pedimos una vez. Tu información es privada y nadie más tiene acceso.</p>
+
+    <p class="gate-privacy">🔒 Tu información es privada y queda guardada en la nube.</p>
   </div>
 </div>
 
@@ -1249,8 +1267,8 @@ document.getElementById('modal').addEventListener('click', function(e) { if (e.t
 
 /* ══════════ GATE ══════════ */
 async function initGate() {
-  document.getElementById('gate-name').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('gate-email').focus(); });
-  document.getElementById('gate-email').addEventListener('keydown', e => { if (e.key === 'Enter') submitGate(); });
+  document.getElementById('gate-email').addEventListener('keydown', e => { if (e.key === 'Enter') checkEmailStep(); });
+  document.getElementById('gate-name').addEventListener('keydown',  e => { if (e.key === 'Enter') submitGateNew(); });
 
   const gate    = document.getElementById('gate');
   const gateBox = gate.querySelector('.gate-box');
@@ -1259,22 +1277,23 @@ async function initGate() {
 
   // 1. Buscar usuario en capas locales (cookie → localStorage → IndexedDB)
   const localUser = await getUserAsync();
-  if (localUser) {
+  if (localUser && localUser.email) {
     currentUserEmail = localUser.email;
     // Cargar desde Firestore por si hay datos más recientes (otro dispositivo)
     const loaded = await loadFromCloud(localUser.email);
     if (loaded) render();
-    saveUserToCloud(localUser);   // asegurar que está en Firestore
+    saveUserToCloud(localUser);
     unlockApp(localUser.name, localUser.email, false);
     return;
   }
 
-  // 2. Primera vez real → mostrar popup
+  // 2. No hay sesión guardada → mostrar paso 1 (solo email)
   const spinner = document.getElementById('gate-spinner');
   if (spinner) spinner.style.display = 'none';
   gateBox.style.transition    = 'opacity 0.4s';
   gateBox.style.opacity       = '1';
   gateBox.style.pointerEvents = '';
+  setTimeout(() => document.getElementById('gate-email').focus(), 450);
 }
 /* ════════════════════════════════════════════════════════
    ALMACENAMIENTO DE USUARIO — 4 capas independientes
@@ -1369,25 +1388,71 @@ async function getUserAsync() {
   return null;
 }
 
-async function submitGate() {
-  const nameEl = document.getElementById('gate-name');
-  const emailEl = document.getElementById('gate-email');
-  document.getElementById('err-name').style.display = 'none';
-  document.getElementById('err-email').style.display = 'none';
-  let valid = true;
-  if (!nameEl.value.trim()) { document.getElementById('err-name').style.display = 'block'; valid = false; }
-  const emailVal = emailEl.value.trim();
-  if (!emailVal || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) { document.getElementById('err-email').style.display = 'block'; valid = false; }
-  if (!valid) return;
-  const user = { name: nameEl.value.trim(), email: emailVal };
+/* Paso 1: chequea email → si existe en Firestore entra directo, si no pide nombre */
+async function checkEmailStep() {
+  const emailEl  = document.getElementById('gate-email');
+  const errEmail = document.getElementById('err-email');
+  const btn      = document.getElementById('btn-continuar');
+  errEmail.style.display = 'none';
+
+  const emailVal = emailEl.value.trim().toLowerCase();
+  if (!emailVal || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
+    errEmail.style.display = 'block'; return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Buscando...';
   currentUserEmail = emailVal;
-  // Intentar restaurar hábitos existentes desde Firestore (ej. viene de otro dispositivo)
+
+  try {
+    // ¿Ya existe este usuario en Firestore?
+    const existingUser = await loadUserFromCloud(emailVal);
+    if (existingUser?.name) {
+      // Usuaria conocida → cargar sus datos y entrar
+      const user   = { name: existingUser.name, email: emailVal };
+      const loaded = await loadFromCloud(emailVal);
+      saveUser(user);
+      if (loaded) render();
+      unlockApp(user.name, user.email, true, loaded);
+      return;
+    }
+  } catch {}
+
+  // Usuaria nueva → pedir nombre
+  btn.disabled = false; btn.textContent = 'Continuar →';
+  document.getElementById('gate-s1').style.display = 'none';
+  document.getElementById('gate-s2').style.display = 'block';
+  setTimeout(() => document.getElementById('gate-name').focus(), 50);
+}
+
+/* Paso 2: solo para usuarias nuevas, guarda nombre + email */
+async function submitGateNew() {
+  const nameEl  = document.getElementById('gate-name');
+  const errName = document.getElementById('err-name');
+  const btn     = document.getElementById('btn-empezar');
+  errName.style.display = 'none';
+
+  if (!nameEl.value.trim()) { errName.style.display = 'block'; return; }
+
+  const emailVal = document.getElementById('gate-email').value.trim().toLowerCase();
+  const user     = { name: nameEl.value.trim(), email: emailVal };
+  btn.disabled = true; btn.textContent = 'Entrando...';
+
+  currentUserEmail = emailVal;
   const loaded = await loadFromCloud(emailVal);
-  saveUser(user);   // cookie 1 año + localStorage + IndexedDB + Firestore
+  saveUser(user);
   const body = new URLSearchParams();
   body.append(FIELD_NAME, user.name); body.append(FIELD_EMAIL, user.email);
   fetch(FORM_URL, { method: 'POST', mode: 'no-cors', body }).catch(() => {});
   unlockApp(user.name, user.email, true, loaded);
+}
+
+/* Volver al paso 1 */
+function showGateStep1() {
+  document.getElementById('gate-s2').style.display = 'none';
+  document.getElementById('gate-s1').style.display = 'block';
+  const btn = document.getElementById('btn-continuar');
+  btn.disabled = false; btn.textContent = 'Continuar →';
+  document.getElementById('gate-email').focus();
 }
 function unlockApp(name, email, animate, restoredFromCloud) {
   const gate = document.getElementById('gate');
