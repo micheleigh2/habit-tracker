@@ -433,22 +433,22 @@
 
     <!-- Paso 1: solo email (siempre visible primero) -->
     <div id="gate-s1">
-      <p class="gate-desc">Ingresá tu correo para acceder a tu tracker. Tus hábitos quedan guardados en la nube.</p>
+      <p class="gate-desc">Ingresa tu correo para acceder a tu tracker. Tus hábitos quedan guardados en la nube.</p>
       <div class="gate-field">
         <label for="gate-email">Correo electrónico</label>
         <input type="email" id="gate-email" placeholder="tu@correo.com" autocomplete="email" />
-        <div class="gate-error" id="err-email">Por favor ingresá un correo válido.</div>
+        <div class="gate-error" id="err-email">Por favor ingresa un correo válido.</div>
       </div>
       <button class="btn-gate" id="btn-continuar" onclick="checkEmailStep()">Continuar →</button>
     </div>
 
     <!-- Paso 2: solo para nuevas usuarias (nombre) -->
     <div id="gate-s2" style="display:none">
-      <p class="gate-desc">¡Bienvenida! Es tu primera vez. ¿Cómo te llamás?</p>
+      <p class="gate-desc">¡Bienvenida! Es tu primera vez. ¿Cómo te llamas?</p>
       <div class="gate-field">
         <label for="gate-name">Nombre</label>
         <input type="text" id="gate-name" placeholder="Tu nombre" autocomplete="given-name" />
-        <div class="gate-error" id="err-name">Por favor ingresá tu nombre.</div>
+        <div class="gate-error" id="err-name">Por favor ingresa tu nombre.</div>
       </div>
       <button class="btn-gate" id="btn-empezar" onclick="submitGateNew()">Empezar →</button>
       <button class="btn-gate-back" onclick="showGateStep1()">← Cambiar correo</button>
@@ -1275,19 +1275,38 @@ async function initGate() {
   gateBox.style.opacity = '0';
   gateBox.style.pointerEvents = 'none';
 
-  // 1. Buscar usuario en capas locales (cookie → localStorage → IndexedDB)
+  // 1. Verificar URL param ?u= (persistencia cross-device y cross-browser)
+  try {
+    const urlEmail = new URLSearchParams(window.location.search).get('u');
+    if (urlEmail) {
+      const email = decodeURIComponent(urlEmail).toLowerCase().trim();
+      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        currentUserEmail = email;
+        const fbUser = await loadUserFromCloud(email);
+        if (fbUser?.name) {
+          const user = { name: fbUser.name, email };
+          saveUser(user);
+          unlockApp(user.name, email, false);
+          loadFromCloud(email).then(ok => { if (ok) render(); });
+          return;
+        }
+        // Firestore sin datos (primera vez) → pre-cargar email y pedir nombre
+        document.getElementById('gate-email').value = email;
+      }
+    }
+  } catch {}
+
+  // 2. Buscar usuario en capas locales (cookie → localStorage → IndexedDB)
   const localUser = await getUserAsync();
   if (localUser && localUser.email) {
     currentUserEmail = localUser.email;
-    // Cargar desde Firestore por si hay datos más recientes (otro dispositivo)
-    const loaded = await loadFromCloud(localUser.email);
-    if (loaded) render();
-    saveUserToCloud(localUser);
     unlockApp(localUser.name, localUser.email, false);
+    loadFromCloud(localUser.email).then(ok => { if (ok) render(); });
+    saveUserToCloud(localUser);
     return;
   }
 
-  // 2. No hay sesión guardada → mostrar paso 1 (solo email)
+  // 3. No hay sesión → mostrar paso 1 (solo email)
   const spinner = document.getElementById('gate-spinner');
   if (spinner) spinner.style.display = 'none';
   gateBox.style.transition    = 'opacity 0.4s';
@@ -1407,12 +1426,11 @@ async function checkEmailStep() {
     // ¿Ya existe este usuario en Firestore?
     const existingUser = await loadUserFromCloud(emailVal);
     if (existingUser?.name) {
-      // Usuaria conocida → cargar sus datos y entrar
-      const user   = { name: existingUser.name, email: emailVal };
-      const loaded = await loadFromCloud(emailVal);
+      // Usuaria conocida → entrar de inmediato, cargar datos en segundo plano
+      const user = { name: existingUser.name, email: emailVal };
       saveUser(user);
-      if (loaded) render();
-      unlockApp(user.name, user.email, true, loaded);
+      unlockApp(user.name, user.email, true);
+      loadFromCloud(emailVal).then(ok => { if (ok) render(); });
       return;
     }
   } catch {}
@@ -1438,12 +1456,12 @@ async function submitGateNew() {
   btn.disabled = true; btn.textContent = 'Entrando...';
 
   currentUserEmail = emailVal;
-  const loaded = await loadFromCloud(emailVal);
-  saveUser(user);
+  saveUser(user);                    // guardar ANTES de abrir la app
+  unlockApp(user.name, user.email, true);  // cerrar gate de inmediato
+  loadFromCloud(emailVal).then(ok => { if (ok) render(); });  // cargar nube en segundo plano
   const body = new URLSearchParams();
   body.append(FIELD_NAME, user.name); body.append(FIELD_EMAIL, user.email);
   fetch(FORM_URL, { method: 'POST', mode: 'no-cors', body }).catch(() => {});
-  unlockApp(user.name, user.email, true, loaded);
 }
 
 /* Volver al paso 1 */
@@ -1454,12 +1472,17 @@ function showGateStep1() {
   btn.disabled = false; btn.textContent = 'Continuar →';
   document.getElementById('gate-email').focus();
 }
-function unlockApp(name, email, animate, restoredFromCloud) {
+function unlockApp(name, email, animate) {
   const gate = document.getElementById('gate');
   if (animate) { gate.style.opacity = '0'; setTimeout(() => gate.classList.add('hidden'), 500); }
   else gate.classList.add('hidden');
   document.getElementById('user-greeting').textContent = 'Hola, ' + name.split(' ')[0] + ' 👋';
-  if (restoredFromCloud) { render(); showToast('☁️ Historial recuperado desde la nube'); }
+  // Guardar email en la URL → persiste en el historial/bookmarks del browser
+  try {
+    const u = new URL(window.location.href);
+    u.searchParams.set('u', encodeURIComponent(email));
+    history.replaceState(null, '', u.toString());
+  } catch {}
 }
 
 /* ══════════ UTILS ══════════ */
