@@ -294,6 +294,14 @@
     <div class="feedback" id="form-feedback"></div>
   </div>
 
+  <!-- Gestión de Retos -->
+  <div class="card">
+    <h2>🎯 Gestión de Retos</h2>
+    <div id="retos-management">
+      <p class="clients-loading">Cargando retos...</p>
+    </div>
+  </div>
+
   <!-- Lista de clientes -->
   <div class="card">
     <h2>
@@ -383,6 +391,7 @@ function checkPassword() {
     document.getElementById('admin').style.display = 'block';
     initWeekPicker();
     initFirebase();
+    loadRetosConfig();
     loadClients();
   } else {
     document.getElementById('pwd-error').style.display = 'block';
@@ -481,6 +490,139 @@ function clearFeedback() {
 function showFeedback(type, html) {
   const el = document.getElementById('form-feedback');
   el.className = 'feedback ' + type; el.innerHTML = html;
+}
+
+/* ══════════════════════════════════════
+   GESTIÓN DE RETOS
+   ══════════════════════════════════════ */
+/* Retos por defecto (espejo de index.html) */
+const ADMIN_DEFAULT_RETOS = [
+  { id:'r1',  nombre:'Toma 2 litros de agua hoy',              pilar:'Hidratación',       emoji:'💧', puntos:30 },
+  { id:'r2',  nombre:'Duerme 7+ horas esta noche',             pilar:'Sueño',             emoji:'😴', puntos:30 },
+  { id:'r3',  nombre:'10 minutos de movimiento (lo que sea)',  pilar:'Movimiento',        emoji:'🚶', puntos:30 },
+  { id:'r4',  nombre:'Sin azúcar añadida en todo el día',      pilar:'Alimentación',      emoji:'🚫', puntos:30 },
+  { id:'r5',  nombre:'Anota 3 emociones que sentiste hoy',     pilar:'Emocional',         emoji:'✍️', puntos:30 },
+  { id:'r6',  nombre:'Sin celular la primera hora del día',    pilar:'Hábitos digitales', emoji:'📵', puntos:30 },
+  { id:'r7',  nombre:'Come sin pantallas al menos una vez',    pilar:'Alimentación',      emoji:'🍽️', puntos:30 },
+  { id:'r8',  nombre:'Sal a caminar 20 minutos al aire libre', pilar:'Movimiento',        emoji:'🌳', puntos:30 },
+  { id:'r9',  nombre:'Prepara una comida saludable desde cero',pilar:'Alimentación',      emoji:'🥗', puntos:45 },
+  { id:'r10', nombre:'Medita o respira profundo 5 minutos',    pilar:'Bienestar',         emoji:'🧘', puntos:30 },
+  { id:'r11', nombre:'Escribe 3 cosas por las que estás agradecida',pilar:'Emocional',   emoji:'📓', puntos:30 },
+  { id:'r12', nombre:'Acuéstate antes de las 23:00',           pilar:'Sueño',            emoji:'🌙', puntos:30 },
+  { id:'r13', nombre:'Come fruta o verdura en cada comida',    pilar:'Alimentación',     emoji:'🥦', puntos:30 },
+  { id:'r14', nombre:'Reto libre: elige el más difícil para ti',pilar:'Personal',        emoji:'🎯', puntos:45 },
+  { id:'r15', nombre:'Invita a alguien a sumarse al reto',     pilar:'Comunidad',        emoji:'🤝', puntos:60 },
+];
+
+const INP = s => `style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:4px;font-size:0.85rem;font-family:inherit;"`;
+
+async function loadRetosConfig() {
+  const container = document.getElementById('retos-management');
+  container.innerHTML = '<p class="clients-loading">Cargando retos...</p>';
+  try {
+    let retos = ADMIN_DEFAULT_RETOS;
+    if (db) {
+      const doc = await db.collection('retos').doc('config').get();
+      if (doc.exists && Array.isArray(doc.data()?.lista) && doc.data().lista.length) {
+        retos = doc.data().lista;
+      }
+    }
+    renderRetosManagement(retos, container);
+  } catch (e) {
+    renderRetosManagement(ADMIN_DEFAULT_RETOS, container);
+    showRetosFeedback('error', '⚠️ No se pudo cargar desde Firestore — mostrando valores por defecto.');
+  }
+}
+
+function makeRetoRow(r) {
+  const tr = document.createElement('tr');
+  tr.dataset.retoId = r.id || ('r_' + Date.now() + '_' + Math.random().toString(36).slice(2));
+  tr.innerHTML = `
+    <td style="padding:4px 2px;">
+      <input type="text" class="reto-emoji" value="${r.emoji || '🎯'}"
+        style="width:48px;padding:6px 4px;border:1px solid var(--border);border-radius:4px;font-size:1.1rem;text-align:center;" />
+    </td>
+    <td style="padding:4px 6px;">
+      <input type="text" class="reto-nombre" value="${(r.nombre||'').replace(/"/g,'&quot;')}" placeholder="Nombre del reto"
+        ${INP()} />
+    </td>
+    <td style="padding:4px 6px;">
+      <input type="text" class="reto-pilar" value="${(r.pilar||'').replace(/"/g,'&quot;')}" placeholder="Pilar"
+        ${INP()} />
+    </td>
+    <td style="padding:4px 6px;">
+      <input type="number" class="reto-puntos" value="${r.puntos || 30}" min="1" max="999"
+        style="width:64px;padding:6px;border:1px solid var(--border);border-radius:4px;text-align:center;font-size:0.85rem;" />
+    </td>
+    <td style="padding:4px 2px;text-align:center;">
+      <button class="btn-delete-habit" onclick="this.closest('tr').remove()" title="Eliminar">✕</button>
+    </td>
+  `;
+  return tr;
+}
+
+function renderRetosManagement(retos, container) {
+  container.innerHTML = `
+    <div style="overflow-x:auto;margin-bottom:14px;">
+      <table class="progress-table" style="width:100%;">
+        <thead>
+          <tr>
+            <th style="width:56px;">Emoji</th>
+            <th>Nombre</th>
+            <th style="width:160px;">Pilar</th>
+            <th style="width:76px;text-align:center;">Pts</th>
+            <th style="width:36px;"></th>
+          </tr>
+        </thead>
+        <tbody id="retos-tbody"></tbody>
+      </table>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn-save" style="width:auto;background:var(--green);" onclick="addRetoRow()">+ Agregar reto</button>
+      <button class="btn-save" style="width:auto;" id="btn-guardar-retos" onclick="saveRetosConfig(this)">💾 Guardar cambios</button>
+    </div>
+    <div class="feedback" id="retos-feedback" style="margin-top:10px;"></div>
+  `;
+  const tbody = document.getElementById('retos-tbody');
+  retos.forEach(r => tbody.appendChild(makeRetoRow(r)));
+}
+
+function addRetoRow() {
+  const tbody = document.getElementById('retos-tbody');
+  tbody.appendChild(makeRetoRow({ id: 'r_' + Date.now(), emoji:'🎯', nombre:'', pilar:'', puntos:30 }));
+  tbody.lastElementChild.querySelector('.reto-nombre').focus();
+}
+
+async function saveRetosConfig(btn) {
+  const tbody = document.getElementById('retos-tbody');
+  const rows  = tbody.querySelectorAll('tr');
+  const retos = [];
+  rows.forEach(row => {
+    const emoji  = row.querySelector('.reto-emoji')?.value?.trim() || '';
+    const nombre = row.querySelector('.reto-nombre')?.value?.trim() || '';
+    const pilar  = row.querySelector('.reto-pilar')?.value?.trim() || '';
+    const puntos = parseInt(row.querySelector('.reto-puntos')?.value) || 30;
+    const id     = row.dataset.retoId || ('r_' + Date.now() + '_' + Math.random().toString(36).slice(2));
+    if (nombre) retos.push({ id, emoji: emoji || '🎯', nombre, pilar: pilar || '—', puntos });
+  });
+
+  if (retos.length === 0) { showRetosFeedback('error', '⚠️ Agrega al menos un reto.'); return; }
+
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  try {
+    await db.collection('retos').doc('config').set({ lista: retos });
+    showRetosFeedback('success', `✅ ${retos.length} retos guardados correctamente.`);
+  } catch (e) {
+    showRetosFeedback('error', '❌ Error: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '💾 Guardar cambios';
+  }
+}
+
+function showRetosFeedback(type, html) {
+  const el = document.getElementById('retos-feedback');
+  el.className = 'feedback ' + type;
+  el.innerHTML = html;
 }
 
 /* ══════════════════════════════════════
