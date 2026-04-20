@@ -350,6 +350,184 @@
     .racha-pill.zero { background: var(--cream); color: var(--brown-light); font-weight: 400; }
     .no-rachas { font-size: 0.8rem; color: var(--brown-light); font-style: italic; }
 
+    /* ══ Ranking / Gamificación ══ */
+    .ranking-card {
+      background: var(--white); border-radius: 6px; box-shadow: var(--shadow);
+      padding: 18px 16px; margin-bottom: 14px;
+    }
+    .ranking-card h3 {
+      font-family: 'Cormorant Garamond', serif; font-size: 1.05rem;
+      font-weight: 500; color: var(--brown-dark); margin-bottom: 14px;
+    }
+    .rank-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .rank-level { display: flex; align-items: center; gap: 10px; }
+    .rank-icon { font-size: 2rem; line-height: 1; }
+    .rank-name { font-size: 0.92rem; font-weight: 600; color: var(--brown-dark); }
+    .rank-pts  { font-size: 0.7rem; color: var(--brown-light); margin-top: 2px; }
+    .rank-badge {
+      background: var(--gold-pale); color: var(--gold);
+      border-radius: 20px; padding: 5px 14px;
+      font-size: 0.78rem; font-weight: 600; white-space: nowrap;
+    }
+    .rank-bar-wrap { margin-bottom: 10px; }
+    .rank-bar-labels {
+      display: flex; justify-content: space-between;
+      font-size: 0.63rem; color: var(--brown-light); margin-bottom: 5px;
+      letter-spacing: 0.3px;
+    }
+    .rank-bar-bg {
+      height: 9px; background: var(--cream-dark); border-radius: 10px; overflow: hidden;
+    }
+    .rank-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--green) 0%, #7fc695 100%);
+      border-radius: 10px; width: 0%;
+      transition: width 1.4s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .rank-message {
+      font-size: 0.82rem; color: var(--brown-mid); line-height: 1.45;
+      text-align: center; font-style: italic; margin: 10px 0 0;
+    }
+    .rank-next {
+      font-size: 0.68rem; color: var(--brown-light); text-align: center;
+      margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--cream-dark);
+    }
+    .rank-loading { font-size: 0.82rem; color: var(--brown-light); font-style: italic; }
+    .rank-trend { font-size: 0.75rem; font-weight: 600; padding: 3px 8px; border-radius: 12px; }
+    .trend-up   { color: #2e7d32; background: #e8f5e9; }
+    .trend-down { color: #c62828; background: #ffebee; }
+    .trend-stable { color: var(--brown-light); background: var(--cream-dark); }
+
+    /* Fila superior ranking: dos tarjetas lado a lado */
+    .rank-top-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    @media (max-width: 600px) {
+      .rank-top-row { grid-template-columns: 1fr; }
+    }
+    .rank-top-row .ranking-card { margin-bottom: 0; }
+
+    /* Leaderboard card */
+    .rank-leaderboard-card {
+      background: var(--white); border-radius: 6px; box-shadow: var(--shadow);
+      padding: 18px 16px; display: flex; flex-direction: column; gap: 12px;
+    }
+    .rank-leaderboard-card h3 {
+      font-family: 'Cormorant Garamond', serif; font-size: 1.05rem;
+      font-weight: 500; color: var(--brown-dark); margin-bottom: 2px;
+    }
+    /* Filas del leaderboard */
+    .lb-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 8px; border-radius: 5px;
+      font-size: 0.8rem; color: var(--brown-mid);
+      border-bottom: 1px solid var(--cream-dark);
+    }
+    .lb-row:last-child { border-bottom: none; }
+    .lb-row.lb-me {
+      background: #f0f7f2; border: 1.5px solid var(--green);
+      border-radius: 5px; font-weight: 600; color: var(--brown-dark);
+    }
+    .lb-rank { min-width: 22px; font-size: 0.72rem; color: var(--brown-light); text-align: center; }
+    .lb-icon { font-size: 1.1rem; line-height: 1; }
+    .lb-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lb-level { font-size: 0.68rem; color: var(--brown-light); }
+    .lb-score { font-size: 0.72rem; font-weight: 600; color: var(--brown-dark); white-space: nowrap; }
+    .lb-sep { text-align: center; font-size: 0.65rem; color: var(--brown-light); letter-spacing: 2px; padding: 3px 0; }
+
+    /* Leyenda de niveles */
+    .lvl-legend { border-top: 1px solid var(--cream-dark); padding-top: 10px; }
+    .lvl-legend-title { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--brown-light); margin-bottom: 8px; }
+    .lvl-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 7px; font-size: 0.78rem; color: var(--brown-mid); line-height: 1.4; }
+    .lvl-icon { font-size: 1rem; line-height: 1.4; min-width: 20px; }
+
+    /* Ranking tab — tarjetas de explicación e historial */
+    .rank-explain-card, .rank-history-card {
+      background: var(--white); border-radius: 6px; box-shadow: var(--shadow);
+      padding: 18px 16px; margin-bottom: 14px;
+    }
+    .rank-explain-card h3, .rank-history-card h3 {
+      font-family: 'Cormorant Garamond', serif; font-size: 1.05rem;
+      font-weight: 500; color: var(--brown-dark); margin-bottom: 14px;
+    }
+    .pts-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 0.84rem; }
+    .pts-table tr { border-bottom: 1px solid var(--cream-dark); }
+    .pts-table td { padding: 8px 4px; color: var(--brown-mid); }
+    .pts-val { text-align: right; font-weight: 600; color: var(--brown-dark); white-space: nowrap; }
+    .pts-breakdown-title { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; color: var(--brown-light); margin-bottom: 8px; }
+    .pts-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--cream-dark); font-size: 0.82rem; color: var(--brown-mid); }
+    .pts-row:last-child { border-bottom: none; }
+    .pts-total { font-weight: 700; color: var(--brown-dark); font-size: 0.88rem; }
+    .pts-num { font-weight: 600; color: var(--brown-dark); white-space: nowrap; }
+    .pts-loading { font-size: 0.8rem; color: var(--brown-light); font-style: italic; }
+    /* Historial */
+    .hist-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--cream-dark); font-size: 0.82rem; }
+    .hist-row:last-child { border-bottom: none; }
+    .hist-date { color: var(--brown-light); min-width: 60px; }
+    .hist-score { color: var(--brown-mid); flex: 1; }
+    .hist-pct { font-weight: 600; color: var(--brown-dark); }
+
+    /* ══ Compartir semana ══ */
+    .share-week-card {
+      background: linear-gradient(135deg, var(--green) 0%, #3d7055 100%);
+      border-radius: 8px; padding: 22px 18px; margin-bottom: 14px; text-align: center;
+    }
+    .share-week-card p { font-size: 0.78rem; color: rgba(255,255,255,0.82); margin-top: 8px; line-height: 1.45; }
+    .btn-share-week {
+      background: #fff; color: var(--green); border: none; border-radius: 6px;
+      padding: 13px 28px; font-family: 'Jost', sans-serif; font-size: 0.85rem;
+      font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    }
+    .btn-share-week:active { transform: scale(0.97); }
+
+    /* Share modal */
+    .share-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 2000;
+      display: flex; align-items: center; justify-content: center; padding: 16px;
+      opacity: 0; pointer-events: none; transition: opacity 0.25s;
+    }
+    .share-overlay.show { opacity: 1; pointer-events: all; }
+    .share-modal {
+      background: var(--white); border-radius: 14px; padding: 24px 20px;
+      max-width: 400px; width: 100%; position: relative;
+      max-height: 92vh; overflow-y: auto; box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+    }
+    .share-modal h3 {
+      font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; font-weight: 500;
+      color: var(--brown-dark); margin-bottom: 6px;
+    }
+    .share-desc { font-size: 0.82rem; color: var(--brown-mid); margin-bottom: 16px; line-height: 1.5; }
+    .share-close {
+      position: absolute; top: 14px; right: 16px; background: none; border: none;
+      font-size: 1.1rem; color: var(--brown-light); cursor: pointer; padding: 4px;
+    }
+    .share-preview {
+      border-radius: 8px; overflow: hidden; margin-bottom: 16px;
+      min-height: 180px; display: flex; align-items: center; justify-content: center;
+      background: var(--cream); border: 1px solid var(--border);
+    }
+    .share-preview img { width: 100%; display: block; border-radius: 8px; }
+    .share-spinner { font-size: 0.84rem; color: var(--brown-light); font-style: italic; padding: 40px 20px; text-align: center; }
+    .share-actions { display: flex; gap: 10px; }
+    .btn-share-dl {
+      flex: 1; background: var(--white); color: var(--brown-dark);
+      border: 2px solid var(--border); border-radius: 6px; padding: 13px 10px;
+      font-family: 'Jost', sans-serif; font-size: 0.8rem; font-weight: 600;
+      letter-spacing: 1px; text-transform: uppercase; cursor: pointer;
+    }
+    .btn-share-send {
+      flex: 1.4; background: var(--green); color: #fff;
+      border: none; border-radius: 6px; padding: 13px 10px;
+      font-family: 'Jost', sans-serif; font-size: 0.8rem; font-weight: 600;
+      letter-spacing: 1px; text-transform: uppercase; cursor: pointer;
+    }
+
     /* CTA */
     .cta-block { background: var(--brown-dark); border-radius: 6px; padding: 30px 22px; text-align: center; margin-bottom: 14px; }
     .cta-block h2 { font-family: 'Cormorant Garamond', serif; font-size: 1.55rem; font-weight: 400; color: var(--white); margin-bottom: 10px; }
@@ -415,6 +593,52 @@
       white-space: nowrap; z-index: 600;
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ══ Retos tab ══ */
+    .mini-rank-strip {
+      display: flex; align-items: center; gap: 8px; justify-content: center;
+      background: var(--cream-dark); border-radius: 20px; padding: 6px 16px;
+      font-size: 0.78rem; color: var(--brown-mid); margin: 0 auto 12px; max-width: 280px;
+    }
+    .mini-rank-sep { color: var(--brown-light); }
+
+    .retos-header-card {
+      background: var(--white); border-radius: 6px; box-shadow: var(--shadow);
+      padding: 20px 16px; margin-bottom: 14px;
+    }
+    .retos-header-card h2 {
+      font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 500;
+      color: var(--brown-dark); margin-bottom: 8px;
+    }
+    .retos-header-card p { font-size: 0.84rem; color: var(--brown-mid); line-height: 1.55; margin-bottom: 14px; }
+    .retos-stats-row { display: flex; gap: 10px; }
+    .retos-stat {
+      flex: 1; background: var(--cream); border-radius: 6px; padding: 12px 8px;
+      text-align: center; display: flex; flex-direction: column; gap: 4px;
+    }
+    .retos-stat span { font-size: 1.3rem; font-weight: 600; color: var(--brown-dark); font-family: 'Cormorant Garamond', serif; }
+    .retos-stat small { font-size: 0.65rem; color: var(--brown-light); text-transform: uppercase; letter-spacing: 0.8px; }
+
+    .retos-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+    .reto-card {
+      background: var(--white); border-radius: 8px; box-shadow: var(--shadow);
+      padding: 14px 12px; display: flex; align-items: center; gap: 12px;
+      cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
+      border: 1.5px solid transparent;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .reto-card:active { transform: scale(0.98); }
+    .reto-card.reto-done { border-color: var(--green); background: #f0f7f2; }
+    .reto-num {
+      min-width: 28px; height: 28px; border-radius: 50%;
+      background: var(--cream-dark); color: var(--brown-mid);
+      font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; justify-content: center;
+    }
+    .reto-done .reto-num { background: var(--green); color: var(--white); }
+    .reto-body { flex: 1; }
+    .reto-nombre { font-size: 0.88rem; color: var(--brown-dark); font-weight: 500; margin-bottom: 3px; }
+    .reto-pilar { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.8px; color: var(--brown-light); }
+    .reto-check { font-size: 1.1rem; }
   </style>
 </head>
 <body>
@@ -472,8 +696,17 @@
     <cite id="quote-author"></cite>
   </div>
 
+  <!-- Mini posición widget -->
+  <div class="mini-rank-strip" id="mini-rank-strip" style="display:none">
+    <span id="mini-rank-level">🌱 Semilla</span>
+    <span class="mini-rank-sep">·</span>
+    <span id="mini-rank-pct">—</span>
+  </div>
+
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('tracker',this)">Mi Tracker</button>
+    <button class="tab-btn" onclick="switchTab('retos',this)">📋 Retos</button>
+    <button class="tab-btn" onclick="switchTab('ranking',this)">🏅 Mi Ranking</button>
     <button class="tab-btn" onclick="switchTab('info',this)">Información</button>
   </div>
 
@@ -544,6 +777,12 @@
           <div class="racha-list" id="racha-list"></div>
         </div>
       </div>
+    </div>
+
+    <!-- Compartir semana -->
+    <div class="share-week-card">
+      <button class="btn-share-week" onclick="showShareModal()">📤 Compartir mi semana</button>
+      <p>Genera una tarjeta con tus logros de esta semana, lista para compartir en Instagram o WhatsApp</p>
     </div>
 
     <div class="cta-block">
@@ -644,8 +883,90 @@
     </div>
   </div>
 
+  <!-- TAB RETOS -->
+  <div class="tab-pane" id="tab-retos">
+    <div class="retos-header-card">
+      <h2>📋 Los Retos del Challenge</h2>
+      <p>Completa estos retos para ganar puntos extra y avanzar en el ranking. Puedes hacerlos en cualquier orden y en cualquier momento.</p>
+      <div class="retos-stats-row">
+        <div class="retos-stat"><span id="retos-done-count">0</span><small>completados</small></div>
+        <div class="retos-stat"><span id="retos-total-count">15</span><small>en total</small></div>
+        <div class="retos-stat"><span id="retos-pts-earned">0 pts</span><small>ganados</small></div>
+      </div>
+    </div>
+    <div id="retos-list" class="retos-list"></div>
+  </div>
+
+  <!-- TAB RANKING -->
+  <div class="tab-pane" id="tab-ranking">
+    <div class="info-section">
+
+      <!-- Fila superior: posición tuya + tabla de usuarias -->
+      <div class="rank-top-row">
+
+        <!-- Tarjeta 1: Tu posición global -->
+        <div class="ranking-card" id="ranking-card">
+          <h3>🏅 Tu posición global</h3>
+          <div class="rank-loading">Calculando...</div>
+        </div>
+
+        <!-- Tarjeta 2: Tabla de usuarias cercanas -->
+        <div class="rank-leaderboard-card" id="rank-leaderboard-card">
+          <h3>🌿 Usuarias cerca de ti</h3>
+          <div id="rank-leaderboard-list"><div class="pts-loading">Calculando...</div></div>
+          <div class="lvl-legend">
+            <div class="lvl-legend-title">¿Qué significa cada nivel?</div>
+            <div class="lvl-row"><span class="lvl-icon">🌱</span><div><strong>Semilla</strong> — 0–199 pts. Estás echando raíces, cada hábito cuenta.</div></div>
+            <div class="lvl-row"><span class="lvl-icon">🌿</span><div><strong>Brote</strong> — 200–499 pts. Tu constancia empieza a verse.</div></div>
+            <div class="lvl-row"><span class="lvl-icon">🪴</span><div><strong>Planta</strong> — 500–1499 pts. Tienes una rutina sólida y floreciente.</div></div>
+            <div class="lvl-row"><span class="lvl-icon">🌸</span><div><strong>Flor</strong> — 1500–3999 pts. Tu dedicación inspira a quienes te rodean.</div></div>
+            <div class="lvl-row"><span class="lvl-icon">🌳</span><div><strong>Árbol</strong> — 4000+ pts. Nivel máximo: raíces profundas, hábitos de por vida.</div></div>
+          </div>
+        </div>
+
+      </div><!-- /rank-top-row -->
+
+      <!-- Tarjeta 3: Cómo se calculan los puntos -->
+      <div class="rank-explain-card" id="rank-explain-card">
+        <h3>📊 Cómo se calculan tus puntos</h3>
+        <table class="pts-table">
+          <tr><td>📅 Día activo: (hábitos cumplidos ÷ total) × 100</td><td class="pts-val">hasta 100 pts/día</td></tr>
+          <tr><td>⭐ Bonus día perfecto (100% de hábitos)</td><td class="pts-val">+ 25 pts extra</td></tr>
+          <tr><td>🔥 Racha más larga (semanas completas)</td><td class="pts-val">× 30 pts</td></tr>
+          <tr><td>📋 Retos completados</td><td class="pts-val">30–60 pts c/u</td></tr>
+        </table>
+        <div class="pts-breakdown" id="pts-breakdown">
+          <div class="pts-loading">Carga tus datos para ver el desglose</div>
+        </div>
+      </div>
+
+      <!-- Tarjeta 3: Historial de ranking -->
+      <div class="rank-history-card" id="rank-history-card">
+        <h3>📈 Tu historial de posición</h3>
+        <div id="rank-history-list"><div class="pts-loading">Sin historial aún</div></div>
+      </div>
+
+    </div>
+  </div>
+
   <div class="app-footer">
     <a href="https://www.RevolucionSaludable.com" target="_blank">www.RevolucionSaludable.com</a>
+  </div>
+</div>
+
+<!-- ══ SHARE MODAL ══ -->
+<div class="share-overlay" id="share-overlay" onclick="if(event.target===this)hideShareModal()">
+  <div class="share-modal">
+    <button class="share-close" onclick="hideShareModal()">✕</button>
+    <h3>📤 Tu resumen semanal</h3>
+    <p class="share-desc">Descarga tu tarjeta y compártela en Instagram, WhatsApp o donde quieras.</p>
+    <div class="share-preview" id="share-preview">
+      <div class="share-spinner">Generando tu tarjeta... 🌿</div>
+    </div>
+    <div class="share-actions">
+      <button class="btn-share-dl" onclick="downloadShareCard()">⬇ Descargar</button>
+      <button class="btn-share-send" onclick="shareWeekCard()">📲 Compartir</button>
+    </div>
   </div>
 </div>
 
@@ -750,7 +1071,8 @@ function initFirebase() {
 /* ── Hábitos en Firestore keyed por email ── */
 function saveToCloud() {
   if (!db || !currentUserEmail) return;
-  db.collection('habitos').doc(emailToDocId(currentUserEmail)).set(state).catch(() => {});
+  const score = calculateScore();
+  db.collection('habitos').doc(emailToDocId(currentUserEmail)).set({ ...state, score }).catch(() => {});
 }
 async function loadFromCloud(email) {
   if (!db || !email) return false;
@@ -759,7 +1081,7 @@ async function loadFromCloud(email) {
     if (snap.exists) {
       const d = snap.data();
       if (d?.habits) {
-        state = { habits: d.habits, weeks: d.weeks || {}, stats: d.stats || { totalPerfectDays: 0 } };
+        state = { habits: d.habits, weeks: d.weeks || {}, stats: d.stats || { totalPerfectDays: 0 }, retosCompletados: d.retosCompletados || {} };
         saveState();
         return true;
       }
@@ -804,7 +1126,8 @@ function defaultState() {
       { id: uid(), name: 'Actividad física',        streak: 0 },
     ],
     weeks: {},
-    stats: { totalPerfectDays: 0 }
+    stats: { totalPerfectDays: 0 },
+    retosCompletados: {}
   };
 }
 
@@ -830,7 +1153,7 @@ function tryMigrateOld() {
     const monday = old.weekStart || getMonday();
     const s = {
       habits: old.habits.map(h => ({ id: h.id, name: h.name, streak: h.streak || 0 })),
-      weeks: {}, stats: old.stats || { totalPerfectDays: 0 }
+      weeks: {}, stats: old.stats || { totalPerfectDays: 0 }, retosCompletados: {}
     };
     s.weeks[monday] = {};
     old.habits.forEach(h => { s.weeks[monday][h.id] = h.checks || Array(DAYS).fill(false); });
@@ -1265,6 +1588,722 @@ function calcStreaksAndPerfect(week) {
 }
 document.getElementById('modal').addEventListener('click', function(e) { if (e.target === this) hideModal(); });
 
+/* ══════════════════════════════════════════════════
+   GAMIFICACIÓN — Puntos, niveles y ranking global
+   ══════════════════════════════════════════════════ */
+
+/* Nombres anónimos para el leaderboard — deterministas por docId */
+const ANON_NAMES = [
+  'Antonia','Valentina','Fernanda','Catalina','Isidora','Josefina','Francisca',
+  'Camila','Florencia','Constanza','Javiera','Daniela','Sofía','Gabriela',
+  'Felipe','Sebastián','Matías','Nicolás','Cristóbal','Ignacio','Tomás',
+  'Andrés','Diego','Pablo','Francisco','Rodrigo','Alejandro','Martín'
+];
+const ANON_EMOJIS = ['🌸','🌿','⭐','🌻','🍀','🦋','🌱','🔥','🌺','💫','🌙','🌈','✨','🍃','🎯'];
+
+function hashStr(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+function anonName(docId) {
+  const h = hashStr(docId);
+  return ANON_NAMES[h % ANON_NAMES.length] + ' ' + ANON_EMOJIS[(h >> 4) % ANON_EMOJIS.length];
+}
+
+const DEFAULT_RETOS = [
+  { id:'r1',  nombre:'Toma 2 litros de agua hoy',              pilar:'Hidratación',       emoji:'💧', puntos:30 },
+  { id:'r2',  nombre:'Duerme 7+ horas esta noche',             pilar:'Sueño',             emoji:'😴', puntos:30 },
+  { id:'r3',  nombre:'10 minutos de movimiento (lo que sea)',  pilar:'Movimiento',        emoji:'🚶', puntos:30 },
+  { id:'r4',  nombre:'Sin azúcar añadida en todo el día',      pilar:'Alimentación',      emoji:'🚫', puntos:30 },
+  { id:'r5',  nombre:'Anota 3 emociones que sentiste hoy',     pilar:'Emocional',         emoji:'✍️', puntos:30 },
+  { id:'r6',  nombre:'Sin celular la primera hora del día',    pilar:'Hábitos digitales', emoji:'📵', puntos:30 },
+  { id:'r7',  nombre:'Come sin pantallas al menos una vez',    pilar:'Alimentación',      emoji:'🍽️', puntos:30 },
+  { id:'r8',  nombre:'Sal a caminar 20 minutos al aire libre', pilar:'Movimiento',        emoji:'🌳', puntos:30 },
+  { id:'r9',  nombre:'Prepara una comida saludable desde cero',pilar:'Alimentación',      emoji:'🥗', puntos:45 },
+  { id:'r10', nombre:'Medita o respira profundo 5 minutos',    pilar:'Bienestar',         emoji:'🧘', puntos:30 },
+  { id:'r11', nombre:'Escribe 3 cosas por las que estás agradecida', pilar:'Emocional',  emoji:'📓', puntos:30 },
+  { id:'r12', nombre:'Acuéstate antes de las 23:00',           pilar:'Sueño',            emoji:'🌙', puntos:30 },
+  { id:'r13', nombre:'Come fruta o verdura en cada comida',    pilar:'Alimentación',     emoji:'🥦', puntos:30 },
+  { id:'r14', nombre:'Reto libre: elige el más difícil para ti',pilar:'Personal',        emoji:'🎯', puntos:45 },
+  { id:'r15', nombre:'Invita a alguien a sumarse al reto',     pilar:'Comunidad',        emoji:'🤝', puntos:60 },
+];
+let retosConfig = DEFAULT_RETOS;   // se sobreescribe al cargar de Firestore
+
+/* Usuarios fantasma — llenan el ranking hasta llegar a 10 cuando hay pocos usuarios reales */
+const GHOST_USERS = [
+  { docId: '_ghost_1',  score: 1380 },
+  { docId: '_ghost_2',  score: 940  },
+  { docId: '_ghost_3',  score: 720  },
+  { docId: '_ghost_4',  score: 550  },
+  { docId: '_ghost_5',  score: 390  },
+  { docId: '_ghost_6',  score: 265  },
+  { docId: '_ghost_7',  score: 185  },
+  { docId: '_ghost_8',  score: 120  },
+  { docId: '_ghost_9',  score: 65   },
+  { docId: '_ghost_10', score: 25   },
+];
+const LEADERBOARD_MIN = 10;   // siempre mostrar al menos este número de personas
+
+const LEVELS = [
+  { min: 0,    icon: '🌱', name: 'Semilla',  next: 200  },
+  { min: 200,  icon: '🌿', name: 'Brote',    next: 500  },
+  { min: 500,  icon: '🪴', name: 'Planta',   next: 1500 },
+  { min: 1500, icon: '🌸', name: 'Flor',     next: 4000 },
+  { min: 4000, icon: '🌳', name: 'Árbol',    next: null },
+];
+
+/* Fórmula de puntos:
+   • Cada día: (hábitos completados / total hábitos) × 100 pts
+     → ej: 8 de 10 hábitos = 80 pts ese día
+   • Bonus día perfecto (100%): +25 pts extra por cada día acumulado
+   • Racha más larga: × 30 pts por semana
+   • Retos completados: según valor del reto                          */
+function calculateScore() {
+  let dayPts = 0;
+  Object.values(state.weeks || {}).forEach(weekData => {
+    const habitKeys = Object.keys(weekData || {}).filter(k => k !== '__comment' && Array.isArray(weekData[k]));
+    const total = habitKeys.length;
+    if (total === 0) return;
+    for (let d = 0; d < 7; d++) {
+      const completed = habitKeys.filter(k => weekData[k][d] === true).length;
+      if (completed > 0) dayPts += Math.round((completed / total) * 100);
+    }
+  });
+  const perfectBonus = (state.stats?.totalPerfectDays || 0) * 25;
+  const topStreak    = state.habits.reduce((m, h) => Math.max(m, h.streak || 0), 0);
+  const retoPts      = retosConfig.reduce((sum, r) => (state.retosCompletados||{})[r.id] ? sum + r.puntos : sum, 0);
+  return dayPts + perfectBonus + topStreak * 30 + retoPts;
+}
+
+function getLevel(score) {
+  let lv = LEVELS[0];
+  for (const l of LEVELS) { if (score >= l.min) lv = l; }
+  return lv;
+}
+
+function getRankMsg(pct) {
+  if (pct >= 90) return '¡Eres una referente! Estás en el top 10% ✨';
+  if (pct >= 75) return '¡Constancia de élite! Estás entre las más dedicadas';
+  if (pct >= 50) return '¡Por encima del promedio! Sigue sumando cada día';
+  if (pct >= 25) return 'Vas por buen camino. ¡Cada hábito te sube en el ranking!';
+  return 'Cada hábito que marcas te acerca hacia arriba 🌱';
+}
+
+/* ── Historial de ranking (localStorage) ── */
+const RANK_HISTORY_KEY = 'rs_rank_v1';
+const RANK_HISTORY_MAX = 10;
+
+function getRankHistory() {
+  try { return JSON.parse(localStorage.getItem(RANK_HISTORY_KEY) || '[]'); } catch { return []; }
+}
+
+function saveRankHistory(pct, score) {
+  const history = getRankHistory();
+  history.push({ pct, score, date: new Date().toISOString() });
+  if (history.length > RANK_HISTORY_MAX) history.splice(0, history.length - RANK_HISTORY_MAX);
+  localStorage.setItem(RANK_HISTORY_KEY, JSON.stringify(history));
+}
+
+function getTrend(pct) {
+  const history = getRankHistory();
+  if (history.length < 2) return null;
+  const prev = history[history.length - 2].pct;
+  const diff = pct - prev;
+  if (diff > 2) return { icon: '↑', label: `+${diff} pts%`, cls: 'trend-up' };
+  if (diff < -2) return { icon: '↓', label: `${diff} pts%`, cls: 'trend-down' };
+  return { icon: '→', label: 'Estable', cls: 'trend-stable' };
+}
+
+let _cachedPct = null;   // guarda el último percentil para no perderlo al re-renderizar
+
+function renderRankingCard(score, pct) {
+  const card = document.getElementById('ranking-card');
+  if (!card) return;
+  if (pct !== null) _cachedPct = pct;
+  const displayPct = pct !== null ? pct : _cachedPct;
+  const lv         = getLevel(score);
+  const nextLv     = LEVELS.find(l => l.min > score);
+  const topPct     = displayPct !== null ? (100 - displayPct) : null;
+  const trend      = displayPct !== null ? getTrend(displayPct) : null;
+
+  card.innerHTML = `
+    <h3>🏅 Tu posición global</h3>
+    <div class="rank-header">
+      <div class="rank-level">
+        <div class="rank-icon">${lv.icon}</div>
+        <div>
+          <div class="rank-name">${lv.name}</div>
+          <div class="rank-pts">${score.toLocaleString('es')} puntos</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        ${trend ? `<span class="rank-trend ${trend.cls}">${trend.icon} ${trend.label}</span>` : ''}
+        ${topPct !== null ? `<div class="rank-badge">Top ${topPct < 1 ? '1' : topPct}%</div>` : ''}
+      </div>
+    </div>
+
+    ${displayPct !== null ? `
+      <div class="rank-bar-wrap">
+        <div class="rank-bar-labels"><span>Más puntos ↑</span><span>Menos puntos ↓</span></div>
+        <div class="rank-bar-bg"><div class="rank-bar-fill" id="rank-fill"></div></div>
+      </div>
+      <div class="rank-message">${getRankMsg(displayPct)}</div>
+    ` : `<div class="rank-loading">Cargando ranking...</div>`}
+
+    <div class="rank-next">
+      ${nextLv
+        ? `Próximo nivel: ${nextLv.icon} <strong>${nextLv.name}</strong> — ${(nextLv.min - score).toLocaleString('es')} pts más`
+        : '¡Nivel máximo alcanzado! 🌟'}
+    </div>
+  `;
+
+  // Animar barra después de que el DOM se actualice
+  if (displayPct !== null) {
+    requestAnimationFrame(() => {
+      const fill = document.getElementById('rank-fill');
+      if (fill) setTimeout(() => { fill.style.width = displayPct + '%'; }, 60);
+    });
+  }
+
+  // Renderizar desglose de puntos y historial
+  renderPointsBreakdown(score);
+  renderRankHistory();
+
+  // Actualizar mini-rank-strip
+  const strip = document.getElementById('mini-rank-strip');
+  const lvEl  = document.getElementById('mini-rank-level');
+  const pctEl = document.getElementById('mini-rank-pct');
+  if (strip && displayPct !== null) {
+    strip.style.display = 'flex';
+    lvEl.textContent  = lv.icon + ' ' + lv.name;
+    pctEl.textContent = 'Top ' + (topPct < 1 ? '1' : topPct) + '%';
+  }
+}
+
+function renderPointsBreakdown(score) {
+  const el = document.getElementById('pts-breakdown');
+  if (!el) return;
+
+  // Calcular componentes con la nueva fórmula de % diario
+  let dayPts = 0;
+  let totalDays = 0;
+  Object.values(state.weeks || {}).forEach(weekData => {
+    const habitKeys = Object.keys(weekData || {}).filter(k => k !== '__comment' && Array.isArray(weekData[k]));
+    const total = habitKeys.length;
+    if (total === 0) return;
+    for (let d = 0; d < 7; d++) {
+      const completed = habitKeys.filter(k => weekData[k][d] === true).length;
+      if (completed > 0) { dayPts += Math.round((completed / total) * 100); totalDays++; }
+    }
+  });
+  const perfectDays = state.stats?.totalPerfectDays || 0;
+  const perfectBonus = perfectDays * 25;
+  const topStreak    = state.habits.reduce((m, h) => Math.max(m, h.streak || 0), 0);
+  const streakPts    = topStreak * 30;
+  const retoPts      = retosConfig.reduce((sum, r) => (state.retosCompletados||{})[r.id] ? sum + r.puntos : sum, 0);
+  const retosHechos  = retosConfig.filter(r => (state.retosCompletados||{})[r.id]).length;
+
+  el.innerHTML = `
+    <div class="pts-breakdown-title">Tu desglose personal</div>
+    <div class="pts-row"><span>Días activos (${totalDays} días, promedio ${totalDays ? Math.round(dayPts/totalDays) : 0}%)</span><span class="pts-num">= ${dayPts.toLocaleString('es')} pts</span></div>
+    <div class="pts-row"><span>${perfectDays} días perfectos (100%) × 25 extra</span><span class="pts-num">= ${perfectBonus.toLocaleString('es')} pts</span></div>
+    <div class="pts-row"><span>Racha más larga (${topStreak} sem.) × 30</span><span class="pts-num">= ${streakPts.toLocaleString('es')} pts</span></div>
+    <div class="pts-row"><span>${retosHechos} retos completados</span><span class="pts-num">= ${retoPts.toLocaleString('es')} pts</span></div>
+    <div class="pts-row pts-total"><span>Total</span><span class="pts-num">${score.toLocaleString('es')} pts</span></div>
+  `;
+}
+
+function renderRankHistory() {
+  const el = document.getElementById('rank-history-list');
+  if (!el) return;
+  const history = getRankHistory();
+  if (!history.length) {
+    el.innerHTML = '<div class="pts-loading">Sin historial aún — vuelve mañana 🌱</div>';
+    return;
+  }
+  const rows = history.slice().reverse().map((entry, i) => {
+    const prev = i < history.length - 1 ? history[history.length - 2 - i] : null;
+    const diff = prev ? entry.pct - prev.pct : null;
+    const trendStr = diff === null ? '' :
+      diff > 2  ? `<span class="trend-up">↑ +${diff}%</span>` :
+      diff < -2 ? `<span class="trend-down">↓ ${diff}%</span>` :
+                  `<span class="trend-stable">→</span>`;
+    const d = new Date(entry.date);
+    const dateStr = d.toLocaleDateString('es-CL', { day:'numeric', month:'short' });
+    const topPct = 100 - entry.pct;
+    return `<div class="hist-row">
+      <span class="hist-date">${dateStr}</span>
+      <span class="hist-score">${entry.score.toLocaleString('es')} pts</span>
+      <span class="hist-pct">Top ${topPct < 1 ? '1' : topPct}%</span>
+      ${trendStr}
+    </div>`;
+  }).join('');
+  el.innerHTML = rows;
+}
+
+function renderLeaderboard(entries, myDocId) {
+  const el = document.getElementById('rank-leaderboard-list');
+  if (!el) return;
+  if (!entries || entries.length === 0) {
+    el.innerHTML = '<div class="pts-loading">Sin datos aún</div>';
+    return;
+  }
+
+  // Ordenar por score desc
+  const sorted = [...entries].sort((a, b) => b.score - a.score);
+  const myIdx  = sorted.findIndex(e => e.docId === myDocId);
+
+  // Mostrar hasta 5 por encima y 4 por debajo del usuario actual (máx 10)
+  let start = Math.max(0, myIdx - 4);
+  let end   = Math.min(sorted.length - 1, start + 9);
+  start     = Math.max(0, end - 9);
+
+  const slice  = sorted.slice(start, end + 1);
+  const myPos  = myIdx + 1;   // posición global 1-based
+  const history = getRankHistory();
+  const prevRank = history.length >= 2 ? history[history.length - 2]._rank : null;
+
+  let html = '';
+  let prevRankInSlice = null;
+
+  slice.forEach((entry, i) => {
+    const globalPos = start + i + 1;
+    const isMe      = entry.docId === myDocId;
+    const lv        = getLevel(entry.score);
+    const name      = isMe ? 'Tú 🌟' : anonName(entry.docId);
+
+    // Separador "..." si hubo salto
+    if (prevRankInSlice !== null && globalPos - prevRankInSlice > 1) {
+      html += `<div class="lb-sep">· · ·</div>`;
+    }
+    prevRankInSlice = globalPos;
+
+    // Tendencia solo para el usuario actual
+    let trendBadge = '';
+    if (isMe && prevRank !== null) {
+      const diff = prevRank - globalPos; // positivo = subió
+      if (diff > 0)       trendBadge = `<span class="rank-trend trend-up">↑${diff}</span>`;
+      else if (diff < 0)  trendBadge = `<span class="rank-trend trend-down">↓${Math.abs(diff)}</span>`;
+      else                trendBadge = `<span class="rank-trend trend-stable">→</span>`;
+    }
+
+    html += `
+      <div class="lb-row${isMe ? ' lb-me' : ''}">
+        <span class="lb-rank">#${globalPos}</span>
+        <span class="lb-icon">${lv.icon}</span>
+        <span class="lb-name">${name}<br><span class="lb-level">${lv.name}</span></span>
+        <span class="lb-score">${entry.score.toLocaleString('es')} pts</span>
+        ${trendBadge}
+      </div>`;
+  });
+
+  el.innerHTML = html;
+  return myPos;
+}
+
+/* ══════════ RETOS ══════════ */
+async function loadRetos() {
+  if (!db) { retosConfig = DEFAULT_RETOS; renderRetos(); return; }
+  try {
+    const doc = await db.collection('retos').doc('config').get();
+    if (doc.exists && Array.isArray(doc.data()?.lista) && doc.data().lista.length) {
+      retosConfig = doc.data().lista;
+    } else {
+      retosConfig = DEFAULT_RETOS;
+    }
+  } catch { retosConfig = DEFAULT_RETOS; }
+  renderRetos();
+}
+
+function renderRetos() {
+  const el = document.getElementById('retos-list');
+  if (!el) return;
+  const completados = state.retosCompletados || {};
+  const totalDone  = Object.values(completados).filter(Boolean).length;
+  const totalPts   = retosConfig.reduce((sum, r) => completados[r.id] ? sum + r.puntos : sum, 0);
+
+  document.getElementById('retos-done-count').textContent  = totalDone;
+  document.getElementById('retos-total-count').textContent = retosConfig.length;
+  document.getElementById('retos-pts-earned').textContent  = totalPts.toLocaleString('es') + ' pts';
+
+  el.innerHTML = retosConfig.map((r, i) => {
+    const done = !!completados[r.id];
+    return `
+      <div class="reto-card ${done ? 'reto-done' : ''}" onclick="toggleReto('${r.id}')">
+        <div class="reto-num">${i + 1}</div>
+        <div class="reto-body">
+          <div class="reto-nombre">${r.emoji} ${r.nombre}</div>
+          <div class="reto-pilar">Pilar: ${r.pilar} · ${r.puntos} pts</div>
+        </div>
+        <div class="reto-check">${done ? '✅' : '○'}</div>
+      </div>`;
+  }).join('');
+}
+
+function toggleReto(id) {
+  if (!state.retosCompletados) state.retosCompletados = {};
+  state.retosCompletados[id] = !state.retosCompletados[id];
+  renderRetos();
+  saveToCloud();
+  showToast(state.retosCompletados[id] ? '¡Reto completado! 🎉' : 'Reto desmarcado');
+}
+
+async function fetchGlobalRanking() {
+  const score   = calculateScore();
+  const myDocId = currentUserEmail ? emailToDocId(currentUserEmail) : null;
+  renderRankingCard(score, null);   // muestra estado de carga
+
+  // Guardar score propio en Firestore para que otros también te cuenten
+  if (db && myDocId) {
+    db.collection('habitos')
+      .doc(myDocId)
+      .set({ score }, { merge: true })
+      .catch(() => {});
+  }
+
+  if (!db) {
+    // Sin Firestore: usar ghost users
+    const padded = padWithGhosts([], myDocId, score);
+    const allScores = padded.map(e => e.score);
+    const below = allScores.filter(s => s < score).length;
+    const pct = Math.round(below / allScores.length * 100);
+    renderLeaderboard(padded, myDocId);
+    renderRankingCard(score, pct);
+    return;
+  }
+
+  try {
+    const snap    = await db.collection('habitos').get();
+    const entries = [];
+    snap.forEach(doc => {
+      const s = doc.data()?.score;
+      if (typeof s === 'number' && s >= 0) entries.push({ docId: doc.id, score: s });
+    });
+
+    // Asegurar que el usuario actual esté (por si acá no guardó aún)
+    if (myDocId && !entries.find(e => e.docId === myDocId)) {
+      entries.push({ docId: myDocId, score });
+    }
+
+    // Rellenar con ghost users si hay menos de LEADERBOARD_MIN
+    const padded = padWithGhosts(entries, myDocId, score);
+
+    const allScores = padded.map(e => e.score);
+    const below     = allScores.filter(s => s < score).length;
+    const pct       = Math.round(below / allScores.length * 100);
+    const myPos     = renderLeaderboard(padded, myDocId);
+
+    // Guardar historial con posición real
+    const history = getRankHistory();
+    history.push({ pct, score, _rank: myPos, date: new Date().toISOString() });
+    if (history.length > RANK_HISTORY_MAX) history.splice(0, history.length - RANK_HISTORY_MAX);
+    localStorage.setItem(RANK_HISTORY_KEY, JSON.stringify(history));
+
+    renderRankingCard(score, pct);
+  } catch {
+    renderRankingCard(score, _cachedPct);
+  }
+}
+
+function padWithGhosts(realEntries, myDocId, myScore) {
+  const result = [...realEntries];
+  // Asegurar que el usuario actual está en la lista
+  if (myDocId && !result.find(e => e.docId === myDocId)) {
+    result.push({ docId: myDocId, score: myScore });
+  }
+  // Agregar ghost users que no choquen con reales
+  let gi = 0;
+  while (result.length < LEADERBOARD_MIN && gi < GHOST_USERS.length) {
+    const g = GHOST_USERS[gi++];
+    if (!result.find(e => e.docId === g.docId)) result.push(g);
+  }
+  return result;
+}
+
+/* ════════════════════════════════════════
+   TARJETA SEMANAL COMPARTIBLE (Canvas)
+   ════════════════════════════════════════ */
+
+function _rrect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function _wrapText(ctx, text, x, y, maxW, lineH) {
+  const words = text.split(' ');
+  let line = '';
+  words.forEach(word => {
+    const test = line + word + ' ';
+    if (ctx.measureText(test).width > maxW && line !== '') {
+      ctx.fillText(line.trim(), x, y);
+      line = word + ' '; y += lineH;
+    } else { line = test; }
+  });
+  ctx.fillText(line.trim(), x, y);
+}
+
+async function generateWeekCard() {
+  const W = 1080, H = 1350;   // formato Instagram portrait 4:5
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  // ── Paleta ──
+  const GREEN   = '#5a8a6a';
+  const GREEN2  = '#3d7055';
+  const GREEN_P = '#e8f2ec';
+  const BROWN   = '#3d2b1f';
+  const BROWN_M = '#7a5c4a';
+  const BROWN_L = '#b09880';
+  const CREAM2  = '#e8ddd0';
+  const GOLD    = '#b8860b';
+  const WHITE   = '#ffffff';
+
+  // ── Fondo ──
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#f9f5ef'); bg.addColorStop(1, '#ecf5ee');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+
+  // Borde interior decorativo
+  ctx.strokeStyle = 'rgba(90,138,106,0.20)'; ctx.lineWidth = 5;
+  _rrect(ctx, 28, 28, W - 56, H - 56, 22); ctx.stroke();
+
+  await document.fonts.ready;
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // SECCIÓN 1 — Banda verde (y:55, h:160)
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ctx.fillStyle = GREEN;
+  _rrect(ctx, 55, 55, W - 110, 160, 16); ctx.fill();
+
+  ctx.fillStyle = WHITE; ctx.textAlign = 'center';
+  ctx.font = 'bold 58px Jost, sans-serif';
+  ctx.fillText('🌿 Revolución Saludable', W / 2, 132);
+  ctx.font = '30px Jost, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  ctx.fillText('MI RESUMEN SEMANAL', W / 2, 192);
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // SECCIÓN 2 — Semana (y:250)
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const fmtD = iso => new Date(iso + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'long' });
+  const sun  = addDays(viewingWeek, 6);
+  ctx.font = '38px "Cormorant Garamond", serif';
+  ctx.fillStyle = BROWN_M; ctx.textAlign = 'center';
+  ctx.fillText(`${fmtD(viewingWeek)}  ·  ${fmtD(sun)}`, W / 2, 258);
+
+  // Divider
+  ctx.strokeStyle = CREAM2; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(90, 278); ctx.lineTo(W - 90, 278); ctx.stroke();
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // Calcular stats
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const wk      = state.weeks[viewingWeek] || {};
+  const hKeys   = Object.keys(wk).filter(k => k !== '__comment' && Array.isArray(wk[k]));
+  const nH      = hKeys.length || Math.max(state.habits.length, 1);
+  let activeDays = 0, dayPcts = [], perfWeek = 0;
+  for (let d = 0; d < 7; d++) {
+    const done = hKeys.filter(k => wk[k]?.[d] === true).length;
+    const pct  = nH > 0 ? done / nH : 0;
+    dayPcts.push(pct);
+    if (done > 0) activeDays++;
+    if (pct >= 1) perfWeek++;
+  }
+  const avgPct = activeDays > 0
+    ? Math.round(dayPcts.filter(p=>p>0).reduce((a,b)=>a+b,0) / activeDays * 100) : 0;
+  const score  = calculateScore();
+  const lv     = getLevel(score);
+  const topStr = state.habits.reduce((m, h) => Math.max(m, h.streak || 0), 0);
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // SECCIÓN 3 — 3 cajas de stats (y:298, h:178)
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const BOX_Y = 298, BOX_H = 178, BOX_W = 286, BOX_G = 36;
+  const BOX_X0 = (W - (3 * BOX_W + 2 * BOX_G)) / 2;
+
+  [
+    { big: `${activeDays}/7`, sub: 'DÍAS ACTIVOS' },
+    { big: `${avgPct}%`,      sub: 'CUMPLIMIENTO' },
+    { big: lv.icon,           sub: lv.name.toUpperCase(), isLevel: true },
+  ].forEach((s, i) => {
+    const bx = BOX_X0 + i * (BOX_W + BOX_G);
+    ctx.shadowColor = 'rgba(0,0,0,0.08)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 5;
+    ctx.fillStyle = WHITE; _rrect(ctx, bx, BOX_Y, BOX_W, BOX_H, 14); ctx.fill();
+    ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+
+    const cx = bx + BOX_W / 2;
+    ctx.textAlign = 'center';
+    if (s.isLevel) {
+      ctx.font = '64px serif'; ctx.fillStyle = GREEN;
+      ctx.fillText(lv.icon, cx, BOX_Y + 98);
+      ctx.font = 'bold 24px Jost, sans-serif'; ctx.fillStyle = GREEN2;
+      ctx.fillText(s.sub, cx, BOX_Y + 152);
+    } else {
+      ctx.font = 'bold 76px "Cormorant Garamond", serif'; ctx.fillStyle = BROWN;
+      ctx.fillText(s.big, cx, BOX_Y + 112);
+      ctx.font = '22px Jost, sans-serif'; ctx.fillStyle = BROWN_L;
+      ctx.fillText(s.sub, cx, BOX_Y + 156);
+    }
+  });
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // SECCIÓN 4 — Barras diarias (y:510, barH:130)
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const BAR_TITLE_Y = 510, BAR_Y = 536, BAR_MAX = 130;
+  const BAR_W = 92, BAR_G = 42;
+  const BAR_X0 = (W - (7 * BAR_W + 6 * BAR_G)) / 2;
+  const DAYS_L = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+
+  ctx.font = '26px Jost, sans-serif'; ctx.fillStyle = BROWN_M; ctx.textAlign = 'center';
+  ctx.fillText('MIS DÍAS ESTA SEMANA', W / 2, BAR_TITLE_Y);
+
+  dayPcts.forEach((pct, i) => {
+    const bx = BAR_X0 + i * (BAR_W + BAR_G);
+    const bh = Math.max(10, Math.round(pct * BAR_MAX));
+    const by = BAR_Y + BAR_MAX - bh;
+
+    // Fondo barra
+    ctx.fillStyle = CREAM2;
+    _rrect(ctx, bx, BAR_Y, BAR_W, BAR_MAX, 10); ctx.fill();
+
+    // Relleno
+    if (pct > 0) {
+      ctx.fillStyle = pct >= 1 ? GOLD : (pct >= 0.7 ? GREEN : '#9fc4af');
+      _rrect(ctx, bx, by, BAR_W, bh, 10); ctx.fill();
+    }
+
+    // % dentro/encima
+    if (pct > 0) {
+      ctx.font = 'bold 20px Jost, sans-serif';
+      ctx.fillStyle = pct >= 1 ? GOLD : GREEN2; ctx.textAlign = 'center';
+      ctx.fillText(Math.round(pct * 100) + '%', bx + BAR_W / 2, Math.max(by - 8, BAR_Y + 20));
+    }
+
+    // Etiqueta día
+    ctx.font = 'bold 23px Jost, sans-serif'; ctx.fillStyle = BROWN;
+    ctx.fillText(DAYS_L[i], bx + BAR_W / 2, BAR_Y + BAR_MAX + 32);
+
+    // Estrella perfecto
+    if (pct >= 1) {
+      ctx.font = '20px serif';
+      ctx.fillText('⭐', bx + BAR_W / 2, BAR_Y + BAR_MAX + 58);
+    }
+  });
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // SECCIÓN 5 — Franja de 3 mini-stats (y:764, h:88)
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const EX_Y = 764, EX_H = 88;
+  ctx.fillStyle = GREEN_P; _rrect(ctx, 55, EX_Y, W - 110, EX_H, 14); ctx.fill();
+
+  const colW = (W - 110) / 3;
+  [
+    { v: String(perfWeek),                  l: 'días perfectos ⭐' },
+    { v: String(topStr),                    l: 'semanas de racha 🔥' },
+    { v: score.toLocaleString('es') + ' pts', l: 'puntos totales 🏅' },
+  ].forEach((s, i) => {
+    const cx = 55 + colW * i + colW / 2;
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 38px "Cormorant Garamond", serif'; ctx.fillStyle = BROWN;
+    ctx.fillText(s.v, cx, EX_Y + 48);
+    ctx.font = '19px Jost, sans-serif'; ctx.fillStyle = BROWN_M;
+    ctx.fillText(s.l, cx, EX_Y + 74);
+  });
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // SECCIÓN 6 — Frase motivacional (y:892)
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const quote = (document.getElementById('quote-text')?.textContent || '').trim();
+  if (quote) {
+    ctx.strokeStyle = CREAM2; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(90, 882); ctx.lineTo(W - 90, 882); ctx.stroke();
+
+    const qShort = quote.length > 90 ? quote.slice(0, 87) + '…' : quote;
+    ctx.font = 'italic 32px "Cormorant Garamond", serif';
+    ctx.fillStyle = BROWN_M; ctx.textAlign = 'center';
+    _wrapText(ctx, `"${qShort}"`, W / 2, 920, W - 200, 40);
+  }
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // SECCIÓN 7 — Branding inferior (y:1050)
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // Franja verde inferior
+  ctx.fillStyle = GREEN;
+  _rrect(ctx, 55, 1070, W - 110, 90, 14); ctx.fill();
+
+  ctx.fillStyle = WHITE; ctx.textAlign = 'center';
+  ctx.font = 'bold 38px Jost, sans-serif';
+  ctx.fillText('RevolucionSaludable.com', W / 2, 1116);
+  ctx.font = '24px Jost, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.80)';
+  ctx.fillText('Tracker de Hábitos · Únete gratis', W / 2, 1148);
+
+  return canvas;
+}
+
+let _shareCanvas = null;
+
+async function showShareModal() {
+  document.getElementById('share-overlay').classList.add('show');
+  document.getElementById('share-preview').innerHTML = '<div class="share-spinner">Generando tu tarjeta... 🌿</div>';
+  _shareCanvas = null;
+  try {
+    await document.fonts.ready;
+    _shareCanvas = await generateWeekCard();
+    const img = new Image();
+    img.src = _shareCanvas.toDataURL('image/png');
+    img.style.cssText = 'width:100%;display:block;border-radius:6px;';
+    const prev = document.getElementById('share-preview');
+    prev.innerHTML = '';
+    prev.appendChild(img);
+  } catch (e) {
+    document.getElementById('share-preview').innerHTML = `<div class="share-spinner" style="color:#c00">Error: ${e.message}</div>`;
+  }
+}
+
+function hideShareModal() {
+  document.getElementById('share-overlay').classList.remove('show');
+  _shareCanvas = null;
+}
+
+function downloadShareCard() {
+  if (!_shareCanvas) return;
+  const fmtD = iso => new Date(iso + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'short' }).replace(/ /g, '-');
+  const a = document.createElement('a');
+  a.download = `rs-habitos-${fmtD(viewingWeek)}.png`;
+  a.href = _shareCanvas.toDataURL('image/png');
+  a.click();
+}
+
+async function shareWeekCard() {
+  if (!_shareCanvas) return;
+  const blob = await new Promise(res => _shareCanvas.toBlob(res, 'image/png'));
+  const file = new File([blob], 'mi-semana-revolucionsaludable.png', { type: 'image/png' });
+  if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({
+        files: [file],
+        title: 'Mi semana de hábitos 🌿',
+        text: '¡Mira cómo van mis hábitos! Únete en RevolucionSaludable.com'
+      });
+      return;
+    } catch (e) { if (e.name === 'AbortError') return; }
+  }
+  // Fallback: descargar
+  downloadShareCard();
+}
+
 /* ══════════ GATE ══════════ */
 async function initGate() {
   document.getElementById('gate-email').addEventListener('keydown', e => { if (e.key === 'Enter') checkEmailStep(); });
@@ -1483,6 +2522,10 @@ function unlockApp(name, email, animate) {
     u.searchParams.set('u', encodeURIComponent(email));
     history.replaceState(null, '', u.toString());
   } catch {}
+  // Cargar retos
+  loadRetos();
+  // Cargar ranking global (con pequeño delay para no bloquear la entrada)
+  setTimeout(() => fetchGlobalRanking(), 1200);
 }
 
 /* ══════════ UTILS ══════════ */
@@ -1491,6 +2534,7 @@ function switchTab(id, btn) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + id).classList.add('active');
   btn.classList.add('active');
+  if (id === 'ranking') fetchGlobalRanking();
 }
 let toastTimer;
 function showToast(msg) {
