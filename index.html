@@ -29,6 +29,7 @@
       --red-pale:    #fdf0f0;
       --gold:        #e8a030;
       --gold-pale:   #fff4e6;
+      --green:       #4a7c59;
       --shadow:      0 2px 16px rgba(46,29,27,0.08);
       --shadow-lg:   0 8px 40px rgba(46,29,27,0.14);
       --touch:       44px;
@@ -639,6 +640,127 @@
     .reto-nombre { font-size: 0.88rem; color: var(--brown-dark); font-weight: 500; margin-bottom: 3px; }
     .reto-pilar { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.8px; color: var(--brown-light); }
     .reto-check { font-size: 1.1rem; }
+
+    /* ══ Diario Alimentario ══ */
+    .diario-nav {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--white); border-radius: 6px; box-shadow: var(--shadow);
+      padding: 12px 16px; margin-bottom: 12px;
+    }
+    .diario-date-label {
+      font-family: 'Cormorant Garamond', serif; font-size: 1.1rem;
+      color: var(--brown-dark); font-weight: 500; text-align: center; flex: 1;
+    }
+
+    /* Entry cards */
+    .diario-entry {
+      background: var(--white); border-radius: 8px; box-shadow: var(--shadow);
+      padding: 14px 16px; margin-bottom: 10px; position: relative;
+    }
+    .diario-entry-header {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+    }
+    .diario-entry-time {
+      font-size: 0.72rem; color: var(--brown-light); font-weight: 600;
+      letter-spacing: 0.5px; background: var(--cream); padding: 3px 8px;
+      border-radius: 10px;
+    }
+    .diario-entry-mood { font-size: 1.3rem; line-height: 1; }
+    .diario-entry-text {
+      font-size: 0.88rem; color: var(--brown-dark); line-height: 1.55;
+      white-space: pre-wrap; word-break: break-word;
+    }
+    .diario-entry-photo {
+      margin-top: 10px;
+    }
+    .diario-entry-photo img {
+      max-width: 160px; max-height: 160px; width: auto; height: auto;
+      object-fit: contain; display: block; border-radius: 8px;
+      border: 1px solid var(--cream-dark); cursor: zoom-in;
+    }
+    /* Lightbox */
+    .lightbox-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 3000;
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    }
+    .lightbox-overlay.show { opacity: 1; pointer-events: all; }
+    .lightbox-overlay img {
+      max-width: 100%; max-height: 90vh; border-radius: 8px;
+      object-fit: contain; box-shadow: 0 4px 40px rgba(0,0,0,0.5);
+    }
+    .lightbox-close {
+      position: fixed; top: 16px; right: 20px; background: none; border: none;
+      color: #fff; font-size: 1.8rem; cursor: pointer; z-index: 3001; line-height: 1;
+    }
+    .btn-delete-entry {
+      position: absolute; top: 10px; right: 12px;
+      background: none; border: none; color: var(--brown-light);
+      font-size: 0.85rem; cursor: pointer; padding: 4px 6px; opacity: 0.6;
+    }
+    .btn-delete-entry:hover { opacity: 1; }
+    .diario-empty {
+      text-align: center; padding: 28px 20px;
+      font-size: 0.84rem; color: var(--brown-light); font-style: italic;
+    }
+
+    /* Form */
+    .diario-form {
+      background: var(--white); border-radius: 8px; box-shadow: var(--shadow);
+      padding: 16px; margin-bottom: 14px; border-top: 3px solid var(--green);
+    }
+    .diario-form-top {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+    }
+    .diario-form-time {
+      font-size: 0.72rem; color: var(--brown-light); font-weight: 600;
+      letter-spacing: 0.5px; background: var(--cream); padding: 3px 8px; border-radius: 10px;
+    }
+    .diario-form-hint { font-size: 0.78rem; color: var(--green); font-weight: 600; }
+    .diario-form textarea {
+      width: 100%; border: 1.5px solid var(--border); border-radius: 6px;
+      padding: 10px 12px; font-family: 'Jost', sans-serif; font-size: 0.88rem;
+      color: var(--brown-dark); resize: vertical; min-height: 80px; line-height: 1.5;
+      background: var(--cream); box-sizing: border-box;
+    }
+    .diario-form textarea:focus { outline: none; border-color: var(--green); background: #fff; }
+
+    /* Mood */
+    .mood-row { margin: 12px 0 10px; }
+    .mood-label { font-size: 0.74rem; color: var(--brown-light); text-transform: uppercase;
+      letter-spacing: 0.8px; margin-bottom: 8px; display: block; }
+    .mood-options { display: flex; gap: 6px; flex-wrap: wrap; }
+    .mood-btn {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      background: var(--cream); border: 1.5px solid transparent; border-radius: 8px;
+      padding: 7px 10px; cursor: pointer; font-size: 1.3rem; min-width: 52px;
+      -webkit-tap-highlight-color: transparent; transition: border-color 0.15s, background 0.15s;
+    }
+    .mood-btn small { font-size: 0.58rem; color: var(--brown-light); font-family: 'Jost', sans-serif; }
+    .mood-btn.selected { border-color: var(--green); background: var(--white); }
+    .mood-btn:active { transform: scale(0.94); }
+
+    /* Photo */
+    .photo-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+    .btn-photo {
+      background: var(--cream); color: var(--brown-mid); border: 1.5px solid var(--border);
+      border-radius: 6px; padding: 8px 14px; font-family: 'Jost', sans-serif;
+      font-size: 0.8rem; font-weight: 500; cursor: pointer;
+    }
+    .photo-preview-wrap { position: relative; display: inline-flex; }
+    .photo-preview-wrap img { height: 60px; width: 60px; object-fit: cover; border-radius: 6px; }
+    .btn-remove-photo {
+      position: absolute; top: -6px; right: -6px; background: var(--brown-dark); color: #fff;
+      border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 0.65rem;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;
+    }
+    .btn-add-entry {
+      width: 100%; background: var(--green); color: #fff; border: none; border-radius: 6px;
+      padding: 13px; font-family: 'Jost', sans-serif; font-size: 0.85rem; font-weight: 600;
+      letter-spacing: 1px; text-transform: uppercase; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-add-entry:active { opacity: 0.85; }
   </style>
 </head>
 <body>
@@ -706,6 +828,7 @@
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('tracker',this)">Mi Tracker</button>
     <button class="tab-btn" onclick="switchTab('retos',this)">📋 Retos</button>
+    <button class="tab-btn" onclick="switchTab('diario',this)">📔 Food Journal</button>
     <button class="tab-btn" onclick="switchTab('ranking',this)">🏅 Mi Ranking</button>
     <button class="tab-btn" onclick="switchTab('info',this)">Información</button>
   </div>
@@ -897,6 +1020,50 @@
     <div id="retos-list" class="retos-list"></div>
   </div>
 
+  <!-- TAB FOOD JOURNAL -->
+  <div class="tab-pane" id="tab-diario">
+
+    <!-- Navegación de fecha -->
+    <div class="diario-nav">
+      <button class="btn-nav" onclick="changeJournalDay(-1)">&#8249;</button>
+      <div class="diario-date-label" id="diario-date-label">—</div>
+      <button class="btn-nav" onclick="changeJournalDay(1)">›</button>
+    </div>
+
+    <!-- Entradas del día -->
+    <div id="diario-entries"></div>
+
+    <!-- Formulario: siempre visible -->
+    <div class="diario-form" id="diario-form">
+      <div class="diario-form-top">
+        <span class="diario-form-time" id="diario-form-time">—</span>
+        <span class="diario-form-hint">Nueva entrada</span>
+      </div>
+      <textarea id="diario-text" placeholder="¿Qué comiste? ¿Cómo te sentiste antes o después?&#10;Escribe con la libertad que quieras, sin juicios 🌿" rows="3"></textarea>
+      <div class="mood-row">
+        <span class="mood-label">¿Cómo te sentiste?</span>
+        <div class="mood-options" id="mood-options">
+          <button class="mood-btn" data-mood="🤩" onclick="selectMood(this,'🤩')">🤩<small>¡Genial!</small></button>
+          <button class="mood-btn" data-mood="😊" onclick="selectMood(this,'😊')">😊<small>Bien</small></button>
+          <button class="mood-btn" data-mood="💪" onclick="selectMood(this,'💪')">💪<small>Energética</small></button>
+          <button class="mood-btn" data-mood="😐" onclick="selectMood(this,'😐')">😐<small>Normal</small></button>
+          <button class="mood-btn" data-mood="😴" onclick="selectMood(this,'😴')">😴<small>Pesada</small></button>
+          <button class="mood-btn" data-mood="🤢" onclick="selectMood(this,'🤢')">🤢<small>Mal</small></button>
+        </div>
+      </div>
+      <div class="photo-row">
+        <input type="file" id="diario-photo-input" accept="image/*" style="display:none" onchange="handlePhotoSelect(event)">
+        <button class="btn-photo" onclick="document.getElementById('diario-photo-input').click()">📷 Agregar foto</button>
+        <div id="diario-photo-preview" class="photo-preview-wrap" style="display:none">
+          <img id="diario-photo-thumb" src="" alt="foto">
+          <button class="btn-remove-photo" onclick="removePendingPhoto()">✕</button>
+        </div>
+      </div>
+      <button class="btn-add-entry" onclick="addJournalEntry()">+ Guardar entrada</button>
+    </div>
+
+  </div>
+
   <!-- TAB RANKING -->
   <div class="tab-pane" id="tab-ranking">
     <div class="info-section">
@@ -952,6 +1119,12 @@
   <div class="app-footer">
     <a href="https://www.RevolucionSaludable.com" target="_blank">www.RevolucionSaludable.com</a>
   </div>
+</div>
+
+<!-- ══ LIGHTBOX ══ -->
+<div class="lightbox-overlay" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightbox-img" src="" alt="foto">
 </div>
 
 <!-- ══ SHARE MODAL ══ -->
@@ -1117,6 +1290,10 @@ const DAY_FULL    = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
 /* ══════════ STATE ══════════ */
 let state = loadState();
 let viewingWeek = getMonday();
+let viewingJournalDate = todayISO();
+let journalData        = {};
+let selectedMood       = null;
+let pendingPhoto       = null;
 
 function defaultState() {
   return {
@@ -1249,6 +1426,12 @@ function getMonday() {
   d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day));
   d.setHours(0,0,0,0);
   return d.toISOString().split('T')[0];
+}
+function todayISO() {
+  const d = new Date();
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
 }
 function addDays(iso, n) {
   const d = new Date(iso + 'T00:00:00'); d.setDate(d.getDate() + n);
@@ -2272,6 +2455,15 @@ async function showShareModal() {
   }
 }
 
+function openLightbox(src) {
+  document.getElementById('lightbox-img').src = src;
+  document.getElementById('lightbox').classList.add('show');
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('show');
+  document.getElementById('lightbox-img').src = '';
+}
+
 function hideShareModal() {
   document.getElementById('share-overlay').classList.remove('show');
   _shareCanvas = null;
@@ -2302,6 +2494,169 @@ async function shareWeekCard() {
   }
   // Fallback: descargar
   downloadShareCard();
+}
+
+/* ════════════════════════════════════════
+   DIARIO ALIMENTARIO
+   ════════════════════════════════════════ */
+// NOTA: La colección 'diario' en Firestore requiere reglas de seguridad similares
+// a las de 'habitos': allow read, write: if true; (o reglas basadas en email)
+
+async function compressPhoto(file) {
+  return new Promise(resolve => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const MAX = 500;
+      const ratio = Math.min(1, MAX / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * ratio);
+      c.height = Math.round(img.height * ratio);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      resolve(c.toDataURL('image/jpeg', 0.55));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+    img.src = url;
+  });
+}
+
+async function handlePhotoSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  pendingPhoto = await compressPhoto(file);
+  if (pendingPhoto) {
+    document.getElementById('diario-photo-thumb').src = pendingPhoto;
+    document.getElementById('diario-photo-preview').style.display = 'flex';
+  }
+  event.target.value = '';
+}
+
+function removePendingPhoto() {
+  pendingPhoto = null;
+  document.getElementById('diario-photo-preview').style.display = 'none';
+  document.getElementById('diario-photo-thumb').src = '';
+}
+
+function selectMood(btn, mood) {
+  document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedMood = mood;
+}
+
+function initJournalForm() {
+  const now = new Date();
+  const hh  = String(now.getHours()).padStart(2, '0');
+  const mm  = String(now.getMinutes()).padStart(2, '0');
+  document.getElementById('diario-form-time').textContent = hh + ':' + mm;
+  document.getElementById('diario-text').value = '';
+  selectedMood  = null;
+  pendingPhoto  = null;
+  document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('diario-photo-preview').style.display = 'none';
+}
+
+function renderJournalDateLabel() {
+  const d = new Date(viewingJournalDate + 'T12:00:00');
+  const today  = todayISO();
+  const yest   = new Date(); yest.setDate(yest.getDate() - 1);
+  const yesterdayISO = yest.getFullYear() + '-' + String(yest.getMonth()+1).padStart(2,'0') + '-' + String(yest.getDate()).padStart(2,'0');
+  let label;
+  if (viewingJournalDate === today)             label = 'Hoy · ' + d.toLocaleDateString('es-CL', { weekday:'long', day:'numeric', month:'long' });
+  else if (viewingJournalDate === yesterdayISO) label = 'Ayer · ' + d.toLocaleDateString('es-CL', { day:'numeric', month:'long' });
+  else label = d.toLocaleDateString('es-CL', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  document.getElementById('diario-date-label').textContent = label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+function renderJournalEntries() {
+  const el      = document.getElementById('diario-entries');
+  const entries = (journalData[viewingJournalDate] || []).slice().sort((a, b) => (a.ts || 0) - (b.ts || 0));
+
+  if (!entries.length) {
+    el.innerHTML = '<div class="diario-empty">Todavía no hay entradas para este día.<br>¡Escribe tu primera comida! 🥗</div>';
+    return;
+  }
+
+  el.innerHTML = entries.map(e => `
+    <div class="diario-entry" id="je-${e.id}">
+      <div class="diario-entry-header">
+        <span class="diario-entry-time">${e.time || ''}</span>
+        ${e.mood ? `<span class="diario-entry-mood">${e.mood}</span>` : ''}
+      </div>
+      <div class="diario-entry-text">${e.text.replace(/</g,'&lt;')}</div>
+      ${e.photo ? `<div class="diario-entry-photo"><img src="${e.photo}" loading="lazy" alt="foto comida" onclick="openLightbox(this.src)"></div>` : ''}
+      <button class="btn-delete-entry" onclick="deleteJournalEntry('${viewingJournalDate}','${e.id}')">✕</button>
+    </div>
+  `).join('');
+}
+
+function renderJournal() {
+  renderJournalDateLabel();
+  renderJournalEntries();
+  // Opacidad del botón de avance (no se puede pasar del día de hoy)
+  const today = todayISO();
+  const fwdBtn = document.querySelector('#tab-diario .btn-nav:last-child');
+  if (fwdBtn) fwdBtn.style.opacity = viewingJournalDate >= today ? '0.3' : '1';
+}
+
+function changeJournalDay(delta) {
+  const d = new Date(viewingJournalDate + 'T12:00:00');
+  d.setDate(d.getDate() + delta);
+  const newDate = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  if (newDate > todayISO()) return;
+  viewingJournalDate = newDate;
+  renderJournal();
+}
+
+async function addJournalEntry() {
+  const text = document.getElementById('diario-text').value.trim();
+  if (!text) { showToast('Escribe algo antes de guardar 📝'); return; }
+
+  const now = new Date();
+  const hh  = String(now.getHours()).padStart(2,'0');
+  const mm  = String(now.getMinutes()).padStart(2,'0');
+
+  const entry = {
+    id:    'fj_' + Date.now(),
+    time:  hh + ':' + mm,
+    text,
+    mood:  selectedMood || null,
+    photo: pendingPhoto  || null,
+    ts:    Date.now(),
+  };
+
+  if (!journalData[viewingJournalDate]) journalData[viewingJournalDate] = [];
+  journalData[viewingJournalDate].push(entry);
+
+  renderJournalEntries();
+  initJournalForm();
+  await saveJournalDay(viewingJournalDate);
+  showToast('Entrada guardada 🌿');
+}
+
+async function deleteJournalEntry(dateStr, entryId) {
+  if (!journalData[dateStr]) return;
+  journalData[dateStr] = journalData[dateStr].filter(e => e.id !== entryId);
+  renderJournalEntries();
+  await saveJournalDay(dateStr);
+}
+
+async function saveJournalDay(dateStr) {
+  if (!db || !currentUserEmail) return;
+  try {
+    await db.collection('diario')
+      .doc(emailToDocId(currentUserEmail))
+      .set({ [dateStr]: journalData[dateStr] || [] }, { merge: true });
+  } catch {}
+}
+
+async function loadJournal() {
+  if (!db || !currentUserEmail) return;
+  try {
+    const snap = await db.collection('diario').doc(emailToDocId(currentUserEmail)).get();
+    if (snap.exists) journalData = snap.data() || {};
+  } catch {}
+  renderJournal();
 }
 
 /* ══════════ GATE ══════════ */
@@ -2535,6 +2890,7 @@ function switchTab(id, btn) {
   document.getElementById('tab-' + id).classList.add('active');
   btn.classList.add('active');
   if (id === 'ranking') fetchGlobalRanking();
+  if (id === 'diario')  { viewingJournalDate = todayISO(); initJournalForm(); loadJournal(); }
 }
 let toastTimer;
 function showToast(msg) {
