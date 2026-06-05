@@ -246,6 +246,21 @@
     .no-progress { text-align: center; padding: 24px 0; color: var(--brown-light); font-size: 0.85rem; font-style: italic; }
 
     .week-info { font-size: 0.72rem; color: var(--brown-light); margin-top: 4px; }
+  /* Lightbox */
+  .lightbox-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 3000;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .lightbox-overlay.show { opacity: 1; pointer-events: all; }
+  .lightbox-overlay img {
+    max-width: 100%; max-height: 90vh; border-radius: 8px;
+    object-fit: contain; box-shadow: 0 4px 40px rgba(0,0,0,0.5);
+  }
+  .lightbox-close {
+    position: fixed; top: 16px; right: 20px; background: none; border: none;
+    color: #fff; font-size: 1.8rem; cursor: pointer; z-index: 3001; line-height: 1;
+  }
   </style>
 </head>
 <body>
@@ -300,6 +315,25 @@
     <div id="retos-management">
       <p class="clients-loading">Cargando retos...</p>
     </div>
+  </div>
+
+  <!-- Lightbox -->
+  <div class="lightbox-overlay" id="lightbox" onclick="closeLightbox()">
+    <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+    <img id="lightbox-img" src="" alt="foto">
+  </div>
+
+  <!-- Diario Alimentario -->
+  <div class="card">
+    <h2>📔 Diario Alimentario</h2>
+    <p style="font-size:0.84rem;color:var(--brown-light);margin-bottom:16px;">Consulta el diario de alimentación de una clienta ingresando su correo.</p>
+    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+      <input type="email" id="diario-email-input" placeholder="correo@cliente.com"
+        style="flex:1;min-width:200px;padding:10px 12px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:0.9rem;"
+        onkeydown="if(event.key==='Enter')loadClientJournal()" />
+      <button class="btn-save" style="width:auto;" onclick="loadClientJournal()">Ver diario</button>
+    </div>
+    <div id="diario-admin-container"></div>
   </div>
 
   <!-- Lista de clientes -->
@@ -527,6 +561,7 @@ async function loadRetosConfig() {
         retos = doc.data().lista;
       }
     }
+    currentRetosConfig = retos;
     renderRetosManagement(retos, container);
   } catch (e) {
     renderRetosManagement(ADMIN_DEFAULT_RETOS, container);
@@ -643,11 +678,13 @@ async function loadClients() {
     habitosSnap.forEach(doc => {
       const d = doc.data();
       if (d?.habits) clients.push({
-        docId:   doc.id,
-        habits:  d.habits  || [],
-        weeks:   d.weeks   || {},
-        stats:   d.stats   || {},
-        usuario: usuarios[doc.id] || null
+        docId:            doc.id,
+        habits:           d.habits            || [],
+        weeks:            d.weeks             || {},
+        stats:            d.stats             || {},
+        retosCompletados: d.retosCompletados  || {},
+        score:            d.score             || 0,
+        usuario:          usuarios[doc.id]    || null
       });
     });
 
@@ -673,7 +710,11 @@ async function loadClients() {
    RENDER CLIENTE
    ══════════════════════════════════════ */
 // Semana activa por cliente (para el panel de progreso)
-const clientViewWeek = {};
+const clientViewWeek    = {};
+const clientDataMap     = {};   // client data keyed by sid
+const clientJournalCache = {};  // loaded diario keyed by docId
+const clientJournalDate  = {};  // viewing date per docId
+let   currentRetosConfig = ADMIN_DEFAULT_RETOS;
 
 function renderClientItem(client, container) {
   if (!clientViewWeek[client.docId]) clientViewWeek[client.docId] = getMonday(new Date());
@@ -683,19 +724,25 @@ function renderClientItem(client, container) {
   const habits     = client.habits || [];
   const registered = !!client.usuario;
 
-  const sid = safeId(client.docId);   // ID seguro para DOM
+  const sid = safeId(client.docId);
+  clientDataMap[sid] = client;
+  if (!clientJournalDate[client.docId]) clientJournalDate[client.docId] = adminTodayISO();
+
+  const retosHechos = currentRetosConfig.filter(r => client.retosCompletados?.[r.id]).length;
+  const lv = adminGetLevel(client.score || 0);
 
   const div = document.createElement('div');
   div.className = 'client-item';
   div.id = sid;
-  div.dataset.docId = client.docId;   // guardamos docId real para Firestore
+  div.dataset.docId = client.docId;
 
   div.innerHTML = `
     <div class="client-header" onclick="toggleClient('${sid}')">
       <div>
         <div class="client-email">${name ? '<strong>' + name + '</strong> · ' : ''}${email}</div>
         <div class="client-status" style="color:${registered ? 'var(--green)' : 'var(--brown-light)'}">
-          ${registered ? '✓ Registrado' : '⏳ Aún no se ha logueado'}
+          ${registered ? '✓ Registrada' : '⏳ Aún no se ha logueado'}
+          &nbsp;·&nbsp; ${lv.icon} ${lv.name} &nbsp;·&nbsp; ${(client.score||0).toLocaleString('es')} pts
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:10px">
@@ -705,15 +752,17 @@ function renderClientItem(client, container) {
     </div>
     <div class="client-body">
       <div class="client-tabs">
-        <button class="client-tab active" onclick="switchTab('${sid}','habits',this)">📋 Hábitos</button>
-        <button class="client-tab"        onclick="switchTab('${sid}','progress',this)">📊 Progreso semanal</button>
+        <button class="client-tab active"  onclick="switchTab('${sid}','habits',this)">📋 Hábitos</button>
+        <button class="client-tab"         onclick="switchTab('${sid}','progress',this)">📊 Progreso</button>
+        <button class="client-tab"         onclick="switchTab('${sid}','retos',this)">🎯 Retos <span style="font-size:0.7rem;opacity:0.7">${retosHechos}/${currentRetosConfig.length}</span></button>
+        <button class="client-tab"         onclick="switchTab('${sid}','diario',this)">📔 Diario</button>
       </div>
 
       <!-- TAB: Hábitos -->
       <div class="client-tab-pane active" id="tab-habits-${sid}">
         ${habits.length === 0
           ? '<p class="no-habits">Sin hábitos cargados.</p>'
-          : habits.map((h, i) => {
+          : habits.map(h => {
               const safeDocId  = client.docId.replace(/"/g,'&quot;');
               const safeName   = h.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
               const displayName = h.name.replace(/&/g,'&amp;').replace(/</g,'&lt;');
@@ -724,10 +773,10 @@ function renderClientItem(client, container) {
                 ${h.addedWeek ? '<span class="habit-week-badge">· desde ' + formatWeekShort(h.addedWeek) + '</span>' : ''}
                 ${isHidden ? '<span class="habit-week-badge" style="color:var(--red)">· oculto desde ' + formatWeekShort(h.deletedWeek) + '</span>' : ''}
                 ${isHidden
-                  ? `<button class="btn-restore-habit" title="Reactivar hábito"
+                  ? `<button class="btn-restore-habit" title="Reactivar"
                        data-doc-id="${safeDocId}" data-habit-id="${h.id}"
                        onclick="restoreHabit(this,event)">↺ reactivar</button>`
-                  : `<button class="btn-delete-habit" title="Eliminar para siempre"
+                  : `<button class="btn-delete-habit" title="Eliminar"
                        data-doc-id="${safeDocId}" data-habit-id="${h.id}" data-habit-name="${safeName}"
                        onclick="deleteHabit(this,event)">✕</button>`
                 }
@@ -739,6 +788,16 @@ function renderClientItem(client, container) {
       <!-- TAB: Progreso -->
       <div class="client-tab-pane" id="tab-progress-${sid}">
         ${renderProgressHTML(client, clientViewWeek[client.docId])}
+      </div>
+
+      <!-- TAB: Retos -->
+      <div class="client-tab-pane" id="tab-retos-${sid}">
+        <p class="no-progress">Abre esta pestaña para cargar...</p>
+      </div>
+
+      <!-- TAB: Diario -->
+      <div class="client-tab-pane" id="tab-diario-${sid}">
+        <p class="no-progress">Abre esta pestaña para cargar...</p>
       </div>
     </div>
   `;
@@ -752,12 +811,13 @@ function switchTab(sid, tab, btn) {
   body.querySelectorAll('.client-tab-pane').forEach(p => p.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('tab-' + tab + '-' + sid).classList.add('active');
-  // Al abrir progreso, siempre recarga datos frescos desde Firestore
+  const docId = item.dataset.docId;
   if (tab === 'progress') {
-    const docId = item.dataset.docId;
-    const week  = clientViewWeek[docId] || getMonday(new Date());
+    const week = clientViewWeek[docId] || getMonday(new Date());
     refreshClientProgress(docId, week);
   }
+  if (tab === 'retos')  renderClientRetos(sid);
+  if (tab === 'diario') renderClientDiario(sid, docId);
 }
 
 function toggleClient(sid) {
@@ -1034,6 +1094,249 @@ async function deleteHabit(btn, event) {
     btn.textContent = '✕'; btn.disabled = false;
     alert('Error al eliminar: ' + e.message);
   }
+}
+
+/* ══════════════════════════════════════
+   DIARIO ALIMENTARIO — ADMIN
+   ══════════════════════════════════════ */
+
+let adminJournalData   = {};
+let adminJournalEmail  = '';
+let adminJournalDate   = '';
+
+function adminTodayISO() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function adminEmailToDocId(email) {
+  return email.toLowerCase().trim().replace(/\//g, '_');
+}
+
+async function loadClientJournal() {
+  const email = document.getElementById('diario-email-input').value.trim().toLowerCase();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    document.getElementById('diario-admin-container').innerHTML = '<p style="color:var(--red);font-size:0.85rem;">⚠️ Ingresa un correo válido.</p>';
+    return;
+  }
+  adminJournalEmail = email;
+  adminJournalDate  = adminTodayISO();
+  document.getElementById('diario-admin-container').innerHTML = '<p style="font-size:0.84rem;color:var(--brown-light);">Cargando...</p>';
+  try {
+    const snap = await db.collection('diario').doc(adminEmailToDocId(email)).get();
+    adminJournalData = snap.exists ? (snap.data() || {}) : {};
+    renderAdminJournal();
+  } catch (e) {
+    document.getElementById('diario-admin-container').innerHTML = `<p style="color:var(--red);font-size:0.84rem;">Error: ${e.message}</p>`;
+  }
+}
+
+function renderAdminJournal() {
+  const container = document.getElementById('diario-admin-container');
+  const allDates  = Object.keys(adminJournalData).sort().reverse();
+
+  if (!allDates.length) {
+    container.innerHTML = `<p style="font-size:0.84rem;color:var(--brown-light);font-style:italic;">
+      No hay entradas de diario para <strong>${adminJournalEmail}</strong> todavía.</p>`;
+    return;
+  }
+
+  // Navegación de fecha
+  const currentEntries = adminJournalData[adminJournalDate] || [];
+  const fmtDate = iso => new Date(iso+'T12:00:00').toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+  const sorted = currentEntries.slice().sort((a,b)=>(a.ts||0)-(b.ts||0));
+
+  container.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+      <button class="btn-save" style="width:auto;padding:7px 14px;" onclick="adminChangeJournalDay(-1)">‹</button>
+      <strong style="flex:1;text-align:center;font-size:0.92rem;color:var(--brown-dark);">${fmtDate(adminJournalDate)}</strong>
+      <button class="btn-save" style="width:auto;padding:7px 14px;" onclick="adminChangeJournalDay(1)">›</button>
+    </div>
+    <p style="font-size:0.78rem;color:var(--brown-light);margin-bottom:10px;">
+      ${sorted.length} entrada${sorted.length !== 1 ? 's' : ''} · ${allDates.length} día${allDates.length !== 1 ? 's' : ''} con registros en total
+    </p>
+    ${sorted.length === 0
+      ? '<p style="font-style:italic;color:var(--brown-light);font-size:0.84rem;">Sin entradas para este día.</p>'
+      : sorted.map(e => `
+        <div style="background:#faf8f5;border-radius:6px;padding:12px 14px;margin-bottom:10px;border-left:3px solid var(--green);">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <span style="font-size:0.72rem;font-weight:600;color:#999;background:#eee;padding:2px 8px;border-radius:10px;">${e.time||''}</span>
+            ${e.mood ? `<span style="font-size:1.2rem;">${e.mood}</span>` : ''}
+          </div>
+          <p style="font-size:0.88rem;color:#3d2b1f;line-height:1.55;white-space:pre-wrap;margin:0 0 8px;">${(e.text||'').replace(/</g,'&lt;')}</p>
+          ${e.photo ? `<img src="${e.photo}" loading="lazy" onclick="openLightbox(this.src)" style="max-width:160px;max-height:160px;width:auto;height:auto;border-radius:6px;object-fit:contain;display:block;cursor:zoom-in;border:1px solid #e8ddd0;">` : ''}
+        </div>
+      `).join('')
+    }
+    <div style="margin-top:14px;padding-top:12px;border-top:1px solid #eee;">
+      <strong style="font-size:0.8rem;color:var(--brown-light);">Todos los días con entradas:</strong><br>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">
+        ${allDates.map(d => `
+          <button onclick="adminGoToJournalDate('${d}')"
+            style="background:${d===adminJournalDate?'var(--green)':'#eee'};color:${d===adminJournalDate?'#fff':'#555'};
+            border:none;border-radius:4px;padding:4px 10px;font-size:0.75rem;cursor:pointer;">
+            ${new Date(d+'T12:00:00').toLocaleDateString('es-CL',{day:'numeric',month:'short'})}
+          </button>`).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function adminChangeJournalDay(delta) {
+  const d = new Date(adminJournalDate + 'T12:00:00');
+  d.setDate(d.getDate() + delta);
+  adminJournalDate = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  renderAdminJournal();
+}
+
+function adminGoToJournalDate(dateStr) {
+  adminJournalDate = dateStr;
+  renderAdminJournal();
+}
+
+/* ══════════════════════════════════════
+   PERFIL CLIENTE — RETOS
+   ══════════════════════════════════════ */
+const ADMIN_LEVELS = [
+  { min:0,    icon:'🌱', name:'Semilla' },
+  { min:200,  icon:'🌿', name:'Brote'   },
+  { min:500,  icon:'🪴', name:'Planta'  },
+  { min:1500, icon:'🌸', name:'Flor'    },
+  { min:4000, icon:'🌳', name:'Árbol'   },
+];
+function adminGetLevel(score) {
+  let lv = ADMIN_LEVELS[0];
+  for (const l of ADMIN_LEVELS) { if (score >= l.min) lv = l; }
+  return lv;
+}
+
+function renderClientRetos(sid) {
+  const pane   = document.getElementById('tab-retos-' + sid);
+  const client = clientDataMap[sid];
+  if (!pane || !client) return;
+
+  const done  = currentRetosConfig.filter(r => client.retosCompletados?.[r.id]);
+  const total = currentRetosConfig.length;
+  const pts   = done.reduce((s, r) => s + (r.puntos || 0), 0);
+
+  const rows = currentRetosConfig.map((r, i) => {
+    const isOk = !!client.retosCompletados?.[r.id];
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:1.1rem;">${isOk ? '✅' : '○'}</span>
+      <span style="font-size:0.75rem;font-weight:600;color:var(--brown-light);min-width:18px;">${i+1}</span>
+      <span style="flex:1;font-size:0.88rem;color:${isOk ? 'var(--brown-dark)' : 'var(--brown-light)'};">${r.emoji || ''} ${r.nombre}</span>
+      <span style="font-size:0.7rem;color:var(--brown-light);white-space:nowrap;">${r.pilar}</span>
+      <span style="font-size:0.75rem;font-weight:600;color:${isOk ? 'var(--green)' : 'var(--brown-light)'};">${r.puntos} pts</span>
+    </div>`;
+  }).join('');
+
+  pane.innerHTML = `
+    <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+      <div style="flex:1;background:var(--green-pale);border-radius:6px;padding:12px;text-align:center;">
+        <div style="font-size:1.6rem;font-weight:700;font-family:'Cormorant Garamond',serif;color:var(--green);">${done.length}/${total}</div>
+        <div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:1px;color:var(--brown-light);">retos hechos</div>
+      </div>
+      <div style="flex:1;background:var(--gold-pale);border-radius:6px;padding:12px;text-align:center;">
+        <div style="font-size:1.6rem;font-weight:700;font-family:'Cormorant Garamond',serif;color:var(--gold);">${pts.toLocaleString('es')}</div>
+        <div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:1px;color:var(--brown-light);">puntos ganados</div>
+      </div>
+    </div>
+    <div>${rows}</div>
+  `;
+}
+
+/* ══════════════════════════════════════
+   PERFIL CLIENTE — DIARIO ALIMENTARIO
+   ══════════════════════════════════════ */
+async function renderClientDiario(sid, docId) {
+  const pane = document.getElementById('tab-diario-' + sid);
+  if (!pane) return;
+
+  // Usar cache si ya cargó
+  if (!clientJournalCache[docId]) {
+    pane.innerHTML = '<p class="no-progress" style="padding:16px 0">Cargando diario...</p>';
+    try {
+      const snap = await db.collection('diario').doc(docId).get();
+      clientJournalCache[docId] = snap.exists ? (snap.data() || {}) : {};
+    } catch (e) {
+      pane.innerHTML = `<p class="no-progress" style="color:var(--red)">Error: ${e.message}</p>`;
+      return;
+    }
+  }
+  renderClientDiarioForDate(sid, docId, clientJournalDate[docId] || adminTodayISO());
+}
+
+function renderClientDiarioForDate(sid, docId, dateStr) {
+  const pane = document.getElementById('tab-diario-' + sid);
+  if (!pane) return;
+  clientJournalDate[docId] = dateStr;
+
+  const data     = clientJournalCache[docId] || {};
+  const allDates = Object.keys(data).sort().reverse();
+  const entries  = (data[dateStr] || []).slice().sort((a, b) => (a.ts || 0) - (b.ts || 0));
+  const today    = adminTodayISO();
+
+  const fmtDate = iso => {
+    const d = new Date(iso + 'T12:00:00');
+    const label = d.toLocaleDateString('es-CL', { weekday:'long', day:'numeric', month:'long' });
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  };
+
+  const entriesHTML = entries.length === 0
+    ? '<p style="font-style:italic;color:var(--brown-light);font-size:0.84rem;padding:8px 0;">Sin entradas para este día.</p>'
+    : entries.map(e => `
+      <div style="background:#faf8f5;border-radius:6px;padding:12px 14px;margin-bottom:8px;border-left:3px solid var(--green);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <span style="font-size:0.7rem;font-weight:600;color:#999;background:#eee;padding:2px 8px;border-radius:10px;">${e.time || ''}</span>
+          ${e.mood ? `<span style="font-size:1.2rem;">${e.mood}</span>` : ''}
+        </div>
+        <p style="font-size:0.87rem;color:var(--brown-dark);line-height:1.55;white-space:pre-wrap;margin:0 0 ${e.photo ? '8px' : '0'};">${(e.text||'').replace(/</g,'&lt;')}</p>
+        ${e.photo ? `<img src="${e.photo}" onclick="openLightbox(this.src)" loading="lazy"
+          style="max-width:120px;max-height:120px;width:auto;height:auto;border-radius:6px;object-fit:contain;cursor:zoom-in;border:1px solid #e8ddd0;">` : ''}
+      </div>`).join('');
+
+  const daysChips = allDates.length
+    ? `<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
+        <span style="font-size:0.72rem;color:var(--brown-light);text-transform:uppercase;letter-spacing:0.8px;">Todos los días con entradas</span>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;">
+          ${allDates.map(d => `<button onclick="renderClientDiarioForDate('${sid}','${docId}','${d}')"
+            style="background:${d===dateStr?'var(--green)':'#eee'};color:${d===dateStr?'#fff':'#666'};
+            border:none;border-radius:4px;padding:3px 9px;font-size:0.72rem;cursor:pointer;">
+            ${new Date(d+'T12:00:00').toLocaleDateString('es-CL',{day:'numeric',month:'short'})}
+          </button>`).join('')}
+        </div>
+      </div>`
+    : '<p style="font-style:italic;color:var(--brown-light);font-size:0.82rem;">Sin entradas en el diario todavía.</p>';
+
+  pane.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+      <button class="week-nav-btn" onclick="changeClientDiarioDay('${sid}','${docId}',-1)">←</button>
+      <div style="flex:1;text-align:center;font-size:0.88rem;font-weight:600;color:var(--brown-dark);">${fmtDate(dateStr)}</div>
+      <button class="week-nav-btn" onclick="changeClientDiarioDay('${sid}','${docId}',1)"
+        style="opacity:${dateStr >= today ? '0.3' : '1'}">→</button>
+    </div>
+    ${entriesHTML}
+    ${daysChips}
+  `;
+}
+
+function changeClientDiarioDay(sid, docId, delta) {
+  const current = clientJournalDate[docId] || adminTodayISO();
+  const d = new Date(current + 'T12:00:00');
+  d.setDate(d.getDate() + delta);
+  const next = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  if (next > adminTodayISO()) return;
+  renderClientDiarioForDate(sid, docId, next);
+}
+
+function openLightbox(src) {
+  document.getElementById('lightbox-img').src = src;
+  document.getElementById('lightbox').classList.add('show');
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('show');
+  document.getElementById('lightbox-img').src = '';
 }
 </script>
 </body>
