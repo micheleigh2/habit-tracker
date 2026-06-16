@@ -105,36 +105,75 @@
       font-size: 0.72rem; letter-spacing: 2.5px; text-transform: uppercase;
       color: var(--brown-light); margin-top: 4px;
     }
-    .user-greeting { margin-top: 6px; font-size: 0.88rem; color: var(--brown-mid); }
 
-    /* Frase motivacional */
-    .week-quote {
-      margin: 0 auto 22px;
-      max-width: 560px;
-      text-align: center;
-      padding: 14px 20px;
-      border-left: 3px solid var(--accent);
-      background: var(--white);
-      border-radius: 0 4px 4px 0;
-      box-shadow: var(--shadow);
+
+    /* ══ Visión ══ */
+    .vision-section {
+      background: var(--white); border-radius: 8px; box-shadow: var(--shadow);
+      padding: 22px 18px; margin-bottom: 16px;
+      border-left: 4px solid var(--green);
     }
-    .week-quote blockquote {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 1.05rem;
-      font-style: italic;
-      font-weight: 400;
-      color: var(--brown-mid);
-      line-height: 1.6;
+    .vision-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 3px; }
+    .vision-title {
+      font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; font-weight: 500;
+      color: var(--brown-dark);
     }
-    .week-quote cite {
-      display: block;
-      margin-top: 6px;
-      font-size: 0.72rem;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      color: var(--brown-light);
-      font-style: normal;
+
+    .vision-label {
+      display: block; font-size: 0.7rem; letter-spacing: 1.2px; text-transform: uppercase;
+      color: var(--brown-mid); margin-bottom: 6px; margin-top: 18px;
+      font-weight: 500;
     }
+    .vision-textarea {
+      width: 100%; border: 1px solid var(--border); border-radius: 5px;
+      padding: 12px 14px; font-family: 'Jost', sans-serif; font-size: 0.9rem;
+      color: var(--brown-dark); background: var(--cream); outline: none;
+      resize: vertical; line-height: 1.55; transition: border-color 0.2s;
+      -webkit-appearance: none;
+    }
+    .vision-textarea:focus { border-color: var(--green); background: var(--white); }
+    .vision-metas { display: flex; flex-direction: column; gap: 9px; margin-bottom: 4px; }
+    .meta-row { display: flex; align-items: center; gap: 8px; }
+    .meta-row input[type="text"] {
+      flex: 1; border: 1px solid var(--border); border-radius: 5px;
+      padding: 10px 12px; font-family: 'Jost', sans-serif; font-size: 0.88rem;
+      color: var(--brown-dark); background: var(--cream); outline: none;
+      transition: border-color 0.2s; -webkit-appearance: none; min-height: 40px;
+    }
+    .meta-row input[type="text"]:focus { border-color: var(--green); background: var(--white); }
+    .meta-row input[type="date"] {
+      border: 1px solid var(--border); border-radius: 5px;
+      padding: 9px 10px; font-family: 'Jost', sans-serif; font-size: 0.82rem;
+      color: var(--brown-mid); background: var(--cream); outline: none;
+      transition: border-color 0.2s; -webkit-appearance: none; min-height: 40px;
+      width: 130px; flex-shrink: 0;
+    }
+    .meta-row input[type="date"]:focus { border-color: var(--green); background: var(--white); }
+    @media (max-width: 500px) {
+      .meta-row { flex-wrap: wrap; }
+      .meta-row input[type="date"] { width: 100%; }
+    }
+    .meta-num {
+      min-width: 22px; height: 22px; border-radius: 50%;
+      background: var(--green); color: #fff;
+      font-size: 0.68rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .btn-remove-meta {
+      background: none; border: none; color: var(--brown-light); cursor: pointer;
+      font-size: 1rem; padding: 4px 6px; flex-shrink: 0; opacity: 0.55;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-remove-meta:hover { opacity: 1; color: var(--red); }
+    .btn-add-meta {
+      background: none; border: 1.5px dashed var(--border); border-radius: 5px;
+      color: var(--brown-light); font-family: 'Jost', sans-serif; font-size: 0.8rem;
+      padding: 9px 14px; cursor: pointer; width: 100%; text-align: left;
+      transition: border-color 0.2s, color 0.2s; margin-top: 4px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-add-meta:hover { border-color: var(--green); color: var(--green); }
+    .vision-saved { font-size: 0.72rem; color: var(--green); margin-top: 10px; min-height: 14px; }
 
     /* Tabs */
     .tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
@@ -150,51 +189,71 @@
     .tab-pane { display: none; }
     .tab-pane.active { display: block; }
 
-    /* ══ Week Nav ══ */
-    .week-nav {
-      display: flex; flex-direction: column; align-items: center;
-      background: var(--white); border-radius: 6px;
-      box-shadow: var(--shadow); padding: 14px 14px 12px;
-      margin-bottom: 12px; text-align: center;
+    /* Intro del tracker */
+    .tracker-intro {
+      background: var(--white); border-radius: 6px; box-shadow: var(--shadow);
+      padding: 12px 18px; margin-bottom: 12px;
+      border-left: 3px solid var(--accent);
     }
-    .week-info { width: 100%; }
-    .week-range-text { font-size: 0.9rem; font-weight: 500; color: var(--brown-dark); }
+    .tracker-intro-text {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1rem; font-style: italic; font-weight: 400;
+      color: var(--brown-mid); line-height: 1.55; margin: 0;
+    }
+
+    /* ══ Week Bar (compacta) ══ */
+    .week-bar {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--cream); border-radius: 6px;
+      border: 1px solid var(--border); padding: 6px 10px;
+      margin-bottom: 12px;
+    }
+    .week-bar-center {
+      flex: 1; text-align: center;
+    }
+    .week-range-text { font-size: 0.8rem; font-weight: 600; color: var(--brown-mid); }
     .week-badge {
-      display: inline-block; margin-top: 4px;
-      font-size: 0.66rem; letter-spacing: 1px; text-transform: uppercase;
-      padding: 2px 10px; border-radius: 20px;
+      display: inline-block; margin-top: 2px;
+      font-size: 0.62rem; letter-spacing: 1px; text-transform: uppercase;
+      padding: 1px 8px; border-radius: 20px;
     }
     .week-badge.current { background: #e8f5e0; color: #3a7a2a; }
     .week-badge.past    { background: var(--cream-dark); color: var(--brown-light); }
     .week-badge.future  { background: var(--gold-pale); color: #8a5500; }
-    .week-nav-bottom {
-      display: flex; align-items: center; margin-top: 10px; width: 100%;
-    }
-    .week-nav-spacer, .week-nav-right {
-      flex: 1; display: flex;
-    }
-    .week-nav-right { justify-content: flex-end; }
-    .week-nav-arrows { display: flex; gap: 8px; }
-    .btn-nav {
-      width: 40px; height: 40px; border-radius: 50%;
-      border: 1px solid var(--border); background: var(--cream);
-      color: var(--brown-mid); font-size: 1.3rem;
+    .btn-nav-sm {
+      width: 30px; height: 30px; border-radius: 50%;
+      border: 1px solid var(--border); background: var(--white);
+      color: var(--brown-mid); font-size: 1.2rem; flex-shrink: 0;
       cursor: pointer; display: flex; align-items: center; justify-content: center;
       transition: background 0.15s; -webkit-tap-highlight-color: transparent;
     }
-    .btn-nav:hover, .btn-nav:active { background: var(--cream-dark); border-color: var(--accent); }
+    .btn-nav-sm:hover, .btn-nav-sm:active { background: var(--cream-dark); border-color: var(--accent); }
+    .week-bar-actions {
+      display: flex; align-items: center; gap: 4px; flex-shrink: 0;
+    }
     .btn-today {
       background: none; border: 1px solid var(--accent); color: var(--accent);
-      border-radius: 20px; padding: 6px 14px;
-      font-family: 'Jost', sans-serif; font-size: 0.7rem;
-      font-weight: 500; letter-spacing: 1px; text-transform: uppercase;
+      border-radius: 20px; padding: 3px 9px;
+      font-family: 'Jost', sans-serif; font-size: 0.65rem;
+      font-weight: 500; letter-spacing: 0.8px; text-transform: uppercase;
       cursor: pointer; white-space: nowrap;
-      transition: background 0.15s, color 0.15s; min-height: 34px;
+      transition: background 0.15s, color 0.15s;
     }
     .btn-today:hover { background: var(--accent); color: var(--white); }
-    .btn-today.hidden-btn { visibility: hidden; pointer-events: none; }
+    .btn-today.hidden-btn { display: none; }
+    .btn-mini-reset {
+      background: none; border: 1px solid var(--border); border-radius: 4px;
+      padding: 3px 8px; font-family: 'Jost', sans-serif; font-size: 0.62rem;
+      color: var(--brown-light); letter-spacing: 0.5px; text-transform: uppercase;
+      cursor: pointer; white-space: nowrap;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-mini-reset:hover { background: var(--cream-dark); color: var(--brown-mid); }
+    .btn-mini-danger { border-color: #e8c4c4; color: #c08080; }
+    .btn-mini-danger:hover { background: var(--red-pale); color: var(--red); border-color: var(--red); }
 
-    /* ══ Card & Table ══ */
+        /* ══ Card & Table ══ */
     .card { background: var(--white); border-radius: 6px; box-shadow: var(--shadow); overflow: hidden; margin-bottom: 14px; }
 
     @media (max-width: 600px) { .table-wrapper { display: none; } .mobile-habits { display: block; } }
@@ -248,6 +307,18 @@
     }
     .btn-icon:hover, .btn-icon:active { background: var(--red-pale); color: var(--red); }
     .btn-icon.edit-btn:hover, .btn-icon.edit-btn:active { background: var(--cream-dark); color: var(--brown-dark); }
+    .tracker-hint-row td.tracker-hint-cell {
+      padding: 8px 18px 10px;
+      font-size: 0.78rem; font-style: italic; color: var(--brown-light);
+      border-bottom: 1px solid var(--border); background: var(--cream);
+      text-align: left; font-family: 'Cormorant Garamond', serif; font-size: 0.88rem;
+      border-top: none;
+    }
+    .tracker-hint-mobile {
+      padding: 10px 14px 12px; font-family: 'Cormorant Garamond', serif;
+      font-size: 0.88rem; font-style: italic; color: var(--brown-light);
+      border-bottom: 1px solid var(--border);
+    }
     .empty-row td { padding: 32px; text-align: center; color: var(--brown-light); font-size: 0.9rem; }
 
     /* Mobile habit cards */
@@ -596,12 +667,13 @@
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
     /* ══ Retos tab ══ */
-    .mini-rank-strip {
-      display: flex; align-items: center; gap: 8px; justify-content: center;
-      background: var(--cream-dark); border-radius: 20px; padding: 6px 16px;
-      font-size: 0.78rem; color: var(--brown-mid); margin: 0 auto 12px; max-width: 280px;
+    /* nivel junto al saludo */
+    .user-bar { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 6px; }
+    .user-greeting { font-size: 0.88rem; color: var(--brown-mid); }
+    .user-level-inline {
+      font-size: 0.72rem; color: var(--green); background: rgba(74,124,89,0.12);
+      border-radius: 12px; padding: 2px 10px; font-weight: 600;
     }
-    .mini-rank-sep { color: var(--brown-light); }
 
     .retos-header-card {
       background: var(--white); border-radius: 6px; box-shadow: var(--shadow);
@@ -809,23 +881,14 @@
   <div class="app-header">
     <h1>🌿 Tracker de Hábitos</h1>
     <p class="brand-line">Revolución Saludable</p>
-    <div class="user-greeting" id="user-greeting"></div>
-  </div>
-
-  <!-- Frase de la semana -->
-  <div class="week-quote" id="week-quote">
-    <blockquote id="quote-text"></blockquote>
-    <cite id="quote-author"></cite>
-  </div>
-
-  <!-- Mini posición widget -->
-  <div class="mini-rank-strip" id="mini-rank-strip" style="display:none">
-    <span id="mini-rank-level">🌱 Semilla</span>
-    <span class="mini-rank-sep">·</span>
-    <span id="mini-rank-pct">—</span>
+    <div class="user-bar">
+      <span class="user-greeting" id="user-greeting"></span>
+      <span class="user-level-inline" id="user-level-badge" style="display:none"></span>
+    </div>
   </div>
 
   <div class="tabs">
+    <button class="tab-btn" onclick="switchTab('vision',this)">🌱 Visión</button>
     <button class="tab-btn active" onclick="switchTab('tracker',this)">Mi Tracker</button>
     <button class="tab-btn" onclick="switchTab('retos',this)">📋 Retos</button>
     <button class="tab-btn" onclick="switchTab('diario',this)">📔 Food Journal</button>
@@ -833,29 +896,45 @@
     <button class="tab-btn" onclick="switchTab('info',this)">Información</button>
   </div>
 
+  <!-- TAB VISIÓN -->
+  <div class="tab-pane" id="tab-vision">
+    <div class="vision-section" id="vision-section">
+      <div class="vision-header">
+        <div class="vision-title">🌱 Mi Visión</div>
+      </div>
+      <label class="vision-label" for="vision-futuro">¿Dónde te gustaría estar en 3 años más?</label>
+      <textarea class="vision-textarea" id="vision-futuro" rows="3"
+        placeholder="Descríbelo con detalle: ¿cómo te sientes?, ¿cómo es tu salud?, ¿qué has logrado?..."
+        oninput="onVisionInput()"></textarea>
+
+      <label class="vision-label">Mis metas para llegar ahí</label>
+      <div class="vision-metas" id="vision-metas"></div>
+      <button class="btn-add-meta" onclick="addMeta()">+ Agregar otra meta</button>
+
+      <label class="vision-label" for="vision-mejoras">¿Qué mejoras traerá a tu vida alcanzar estas metas?</label>
+      <textarea class="vision-textarea" id="vision-mejoras" rows="3"
+        placeholder="Piensa en tu energía, relaciones, autoestima, salud, trabajo..."
+        oninput="onVisionInput()"></textarea>
+
+      <div class="vision-saved" id="vision-saved"></div>
+    </div>
+  </div>
+
   <!-- TAB TRACKER -->
   <div class="tab-pane active" id="tab-tracker">
 
-    <div class="week-nav">
-      <div class="week-info">
+    <div class="week-bar">
+      <button class="btn-nav-sm" onclick="changeWeek(-1)">&#8249;</button>
+      <div class="week-bar-center">
         <div class="week-range-text" id="week-range-text">—</div>
         <div id="week-badge"></div>
       </div>
-      <div class="week-nav-bottom">
-        <div class="week-nav-spacer"></div>
-        <div class="week-nav-arrows">
-          <button class="btn-nav" onclick="changeWeek(-1)">&#8249;</button>
-          <button class="btn-nav" onclick="changeWeek(1)">&#8250;</button>
-        </div>
-        <div class="week-nav-right">
-          <button class="btn-today hidden-btn" id="btn-today" onclick="goToToday()">Hoy</button>
-        </div>
+      <button class="btn-nav-sm" onclick="changeWeek(1)">&#8250;</button>
+      <div class="week-bar-actions">
+        <button class="btn-today hidden-btn" id="btn-today" onclick="goToToday()">Hoy</button>
+        <button class="btn-mini-reset" onclick="showModal('week')" title="Limpiar esta semana">Limpiar</button>
+        <button class="btn-mini-reset btn-mini-danger" onclick="showModal('all')" title="Resetear todo">Resetear</button>
       </div>
-    </div>
-
-    <div class="reset-row">
-      <button class="btn-reset btn-reset-week" onclick="showModal('week')">Limpiar esta semana</button>
-      <button class="btn-reset btn-reset-all"  onclick="showModal('all')">Resetear todo</button>
     </div>
 
     <div class="card">
@@ -871,9 +950,15 @@
               <th class="actions-col"></th>
             </tr>
           </thead>
+          <tbody>
+            <tr class="tracker-hint-row">
+              <td colspan="9" class="tracker-hint-cell">Descompone las grandes metas de la pestaña "Visión" en hábitos diarios medibles y alcanzables, que te permitirán alcanzarlos</td>
+            </tr>
+          </tbody>
           <tbody id="habit-body-desktop"></tbody>
         </table>
       </div>
+      <div class="tracker-hint-mobile">Descompone las grandes metas de la pestaña "Visión" en hábitos diarios medibles y alcanzables, que te permitirán alcanzarlos</div>
       <div class="mobile-habits" id="habit-body-mobile"></div>
       <div class="add-area">
         <input type="text" id="new-habit-input" placeholder="Nuevo hábito..." maxlength="80" />
@@ -940,11 +1025,6 @@
           <li><strong>Total acumulado:</strong> el contador de días perfectos se va sumando con cada semana que limpias y nunca se borra.</li>
           <li><strong>¿Cuándo se actualiza?</strong> Al presionar <em>"Limpiar esta semana"</em>, el sistema primero guarda las rachas y días perfectos, y luego limpia los checks para la siguiente semana.</li>
         </ul>
-      </div>
-
-      <div class="info-card">
-        <h3>💬 Frases semanales</h3>
-        <p>Cada semana del año tiene una frase motivacional diferente — son 52 en total. Aparece justo arriba del tracker y cambia automáticamente según la semana en que estés, sin importar si navegas a semanas pasadas o futuras.</p>
       </div>
 
       <div class="info-card">
@@ -1254,7 +1334,8 @@ async function loadFromCloud(email) {
     if (snap.exists) {
       const d = snap.data();
       if (d?.habits) {
-        state = { habits: d.habits, weeks: d.weeks || {}, stats: d.stats || { totalPerfectDays: 0 }, retosCompletados: d.retosCompletados || {} };
+        const defVision = { futuro:'', metas:[{texto:'',fecha:''},{texto:'',fecha:''},{texto:'',fecha:''}], mejoras:'' };
+        state = { habits: d.habits, weeks: d.weeks || {}, stats: d.stats || { totalPerfectDays: 0 }, retosCompletados: d.retosCompletados || {}, vision: d.vision || defVision };
         saveState();
         return true;
       }
@@ -1304,7 +1385,8 @@ function defaultState() {
     ],
     weeks: {},
     stats: { totalPerfectDays: 0 },
-    retosCompletados: {}
+    retosCompletados: {},
+    vision: { futuro: '', metas: [{texto:'',fecha:''},{texto:'',fecha:''},{texto:'',fecha:''}], mejoras: '' }
   };
 }
 
@@ -1453,12 +1535,98 @@ function weekDiff(week) {
   return Math.round((tgt - cur) / (7 * 24 * 3600 * 1000));
 }
 
-/* ══════════ QUOTE ══════════ */
-function renderQuote() {
+/* ══════════ QUOTE (solo para tarjeta compartible) ══════════ */
+function getWeekQuote() {
   const wk = weekOfYear(viewingWeek);
-  const q  = QUOTES[(wk - 1) % QUOTES.length];
-  document.getElementById('quote-text').textContent   = '\u201C' + q.text + '\u201D';
-  document.getElementById('quote-author').textContent = q.author ? '— ' + q.author : '';
+  return QUOTES[(wk - 1) % QUOTES.length];
+}
+
+/* ══════════ VISIÓN ══════════ */
+function defaultVision() {
+  return {
+    futuro: '',
+    metas: [
+      { texto: '', fecha: '' },
+      { texto: '', fecha: '' },
+      { texto: '', fecha: '' }
+    ],
+    mejoras: ''
+  };
+}
+function getVision() {
+  if (!state.vision) state.vision = defaultVision();
+  return state.vision;
+}
+function renderVision() {
+  const v = getVision();
+  const futuroEl  = document.getElementById('vision-futuro');
+  const mejorasEl = document.getElementById('vision-mejoras');
+  if (futuroEl  && document.activeElement !== futuroEl)  futuroEl.value  = v.futuro  || '';
+  if (mejorasEl && document.activeElement !== mejorasEl) mejorasEl.value = v.mejoras || '';
+  renderMetasList();
+}
+function renderMetasList() {
+  const v = getVision();
+  const container = document.getElementById('vision-metas');
+  if (!container) return;
+  container.innerHTML = '';
+  (v.metas || []).forEach((m, i) => {
+    const row = document.createElement('div');
+    row.className = 'meta-row';
+    const delBtn = v.metas.length > 1
+      ? `<button class="btn-remove-meta" onclick="removeMeta(${i})" title="Eliminar meta">✕</button>` : '';
+    row.innerHTML = `
+      <span class="meta-num">${i+1}</span>
+      <input type="text" placeholder="Describe tu meta..." value="${escHtml(m.texto||'')}"
+        oninput="updateMeta(${i},'texto',this.value)" />
+      <input type="date" value="${escHtml(m.fecha||'')}"
+        oninput="updateMeta(${i},'fecha',this.value)" />
+      ${delBtn}
+    `;
+    container.appendChild(row);
+  });
+}
+function updateMeta(i, field, val) {
+  const v = getVision();
+  if (!v.metas[i]) return;
+  v.metas[i][field] = val;
+  onVisionInput();
+}
+function addMeta() {
+  const v = getVision();
+  v.metas.push({ texto: '', fecha: '' });
+  renderMetasList();
+  onVisionInput();
+  const rows = document.querySelectorAll('#vision-metas .meta-row');
+  const last = rows[rows.length - 1];
+  if (last) { const inp = last.querySelector('input[type="text"]'); if (inp) inp.focus(); }
+}
+function removeMeta(i) {
+  const v = getVision();
+  if (v.metas.length <= 1) return;
+  v.metas.splice(i, 1);
+  renderMetasList();
+  onVisionInput();
+}
+function escHtml(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+let visionTimer;
+function onVisionInput() {
+  const v = getVision();
+  const futuroEl  = document.getElementById('vision-futuro');
+  const mejorasEl = document.getElementById('vision-mejoras');
+  if (futuroEl)  v.futuro  = futuroEl.value;
+  if (mejorasEl) v.mejoras = mejorasEl.value;
+  clearTimeout(visionTimer);
+  visionTimer = setTimeout(() => {
+    saveState();
+    const saved = document.getElementById('vision-saved');
+    if (saved) {
+      saved.textContent = 'Guardado ✓';
+      setTimeout(() => { if (saved) saved.textContent = ''; }, 1800);
+    }
+  }, 600);
 }
 
 /* ══════════ NAVIGATION ══════════ */
@@ -1467,7 +1635,6 @@ function goToToday()     { viewingWeek = getMonday(); render(); }
 
 /* ══════════ RENDER ══════════ */
 function render() {
-  renderQuote();
   renderWeekNav();
   renderDesktop();
   renderMobile();
@@ -1483,14 +1650,14 @@ function renderWeekNav() {
   const todayBtn = document.getElementById('btn-today');
   if (diff === 0) {
     badgeEl.innerHTML = '<span class="week-badge current">Semana actual</span>';
-    todayBtn.classList.add('hidden-btn');
+    if (todayBtn) todayBtn.classList.add('hidden-btn');
   } else if (diff < 0) {
     const n = Math.abs(diff);
     badgeEl.innerHTML = `<span class="week-badge past">${n === 1 ? 'Semana pasada' : `Hace ${n} semanas`}</span>`;
-    todayBtn.classList.remove('hidden-btn');
+    if (todayBtn) todayBtn.classList.remove('hidden-btn');
   } else {
     badgeEl.innerHTML = `<span class="week-badge future">${diff === 1 ? 'Próxima semana' : `En ${diff} semanas`}</span>`;
-    todayBtn.classList.remove('hidden-btn');
+    if (todayBtn) todayBtn.classList.remove('hidden-btn');
   }
 }
 
@@ -1953,14 +2120,11 @@ function renderRankingCard(score, pct) {
   renderPointsBreakdown(score);
   renderRankHistory();
 
-  // Actualizar mini-rank-strip
-  const strip = document.getElementById('mini-rank-strip');
-  const lvEl  = document.getElementById('mini-rank-level');
-  const pctEl = document.getElementById('mini-rank-pct');
-  if (strip && displayPct !== null) {
-    strip.style.display = 'flex';
-    lvEl.textContent  = lv.icon + ' ' + lv.name;
-    pctEl.textContent = 'Top ' + (topPct < 1 ? '1' : topPct) + '%';
+  // Actualizar nivel junto al saludo
+  const lvBadge = document.getElementById('user-level-badge');
+  if (lvBadge && displayPct !== null) {
+    lvBadge.textContent = lv.icon + ' ' + lv.name;
+    lvBadge.style.display = 'inline';
   }
 }
 
@@ -2407,7 +2571,8 @@ async function generateWeekCard() {
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // SECCIÓN 6 — Frase motivacional (y:892)
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  const quote = (document.getElementById('quote-text')?.textContent || '').trim();
+  const _weekQ = getWeekQuote();
+  const quote = _weekQ ? _weekQ.text : '';
   if (quote) {
     ctx.strokeStyle = CREAM2; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(90, 882); ctx.lineTo(W - 90, 882); ctx.stroke();
@@ -2415,7 +2580,7 @@ async function generateWeekCard() {
     const qShort = quote.length > 90 ? quote.slice(0, 87) + '…' : quote;
     ctx.font = 'italic 32px "Cormorant Garamond", serif';
     ctx.fillStyle = BROWN_M; ctx.textAlign = 'center';
-    _wrapText(ctx, `"${qShort}"`, W / 2, 920, W - 200, 40);
+    _wrapText(ctx, '“' + qShort + '”', W / 2, 920, W - 200, 40);
   }
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2681,7 +2846,7 @@ async function initGate() {
           const user = { name: fbUser.name, email };
           saveUser(user);
           unlockApp(user.name, email, false);
-          loadFromCloud(email).then(ok => { if (ok) render(); });
+          loadFromCloud(email).then(ok => { if (ok) { render(); renderVision(); } });
           return;
         }
         // Firestore sin datos (primera vez) → pre-cargar email y pedir nombre
@@ -2695,7 +2860,7 @@ async function initGate() {
   if (localUser && localUser.email) {
     currentUserEmail = localUser.email;
     unlockApp(localUser.name, localUser.email, false);
-    loadFromCloud(localUser.email).then(ok => { if (ok) render(); });
+    loadFromCloud(localUser.email).then(ok => { if (ok) { render(); renderVision(); } });
     saveUserToCloud(localUser);
     return;
   }
@@ -2824,7 +2989,7 @@ async function checkEmailStep() {
       const user = { name: existingUser.name, email: emailVal };
       saveUser(user);
       unlockApp(user.name, user.email, true);
-      loadFromCloud(emailVal).then(ok => { if (ok) render(); });
+      loadFromCloud(emailVal).then(ok => { if (ok) { render(); renderVision(); } });
       return;
     }
   } catch {}
@@ -2852,7 +3017,7 @@ async function submitGateNew() {
   currentUserEmail = emailVal;
   saveUser(user);                    // guardar ANTES de abrir la app
   unlockApp(user.name, user.email, true);  // cerrar gate de inmediato
-  loadFromCloud(emailVal).then(ok => { if (ok) render(); });  // cargar nube en segundo plano
+  loadFromCloud(emailVal).then(ok => { if (ok) { render(); renderVision(); } });  // cargar nube en segundo plano
   const body = new URLSearchParams();
   body.append(FIELD_NAME, user.name); body.append(FIELD_EMAIL, user.email);
   fetch(FORM_URL, { method: 'POST', mode: 'no-cors', body }).catch(() => {});
@@ -2891,6 +3056,7 @@ function switchTab(id, btn) {
   btn.classList.add('active');
   if (id === 'ranking') fetchGlobalRanking();
   if (id === 'diario')  { viewingJournalDate = todayISO(); initJournalForm(); loadJournal(); }
+  if (id === 'vision')  renderVision();
 }
 let toastTimer;
 function showToast(msg) {
@@ -2904,6 +3070,7 @@ document.getElementById('week-comment').addEventListener('input', onCommentInput
 initFirebase();
 initGate();
 render();
+renderVision();
 </script>
 </body>
 </html>
