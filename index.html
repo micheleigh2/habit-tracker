@@ -141,16 +141,22 @@
       transition: border-color 0.2s; -webkit-appearance: none; min-height: 40px;
     }
     .meta-row input[type="text"]:focus { border-color: var(--green); background: var(--white); }
-    .meta-row input[type="date"] {
-      border: 1px solid var(--border); border-radius: 5px;
-      padding: 9px 10px; font-family: 'Jost', sans-serif; font-size: 0.82rem;
-      color: var(--brown-mid); background: var(--cream); outline: none;
-      transition: border-color 0.2s; -webkit-appearance: none; min-height: 40px;
-      width: 130px; flex-shrink: 0;
+    .meta-date-wrap { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+    .meta-date-label {
+      font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.8px;
+      color: var(--green); font-weight: 600; padding-left: 2px;
     }
-    .meta-row input[type="date"]:focus { border-color: var(--green); background: var(--white); }
+    .meta-row input[type="date"] {
+      border: 1.5px solid var(--accent); border-radius: 5px;
+      padding: 8px 10px; font-family: 'Jost', sans-serif; font-size: 0.82rem;
+      color: var(--brown-dark); background: var(--white); outline: none;
+      transition: border-color 0.2s; -webkit-appearance: none; min-height: 38px;
+      width: 130px;
+    }
+    .meta-row input[type="date"]:focus { border-color: var(--green); }
     @media (max-width: 500px) {
       .meta-row { flex-wrap: wrap; }
+      .meta-date-wrap { width: calc(100% - 32px); }
       .meta-row input[type="date"] { width: 100%; }
     }
     .meta-num {
@@ -322,25 +328,25 @@
     .empty-row td { padding: 32px; text-align: center; color: var(--brown-light); font-size: 0.9rem; }
 
     /* Mobile habit cards */
-    .mobile-habit-card { border-top: 1px solid var(--border); padding: 14px 14px; }
-    .mobile-habit-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .mobile-habit-card { border-top: 1px solid var(--border); padding: 10px 12px; }
+    .mobile-habit-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
     .mobile-habit-name-wrap { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
-    .mobile-habit-name { font-size: 0.92rem; font-weight: 500; color: var(--brown-dark); }
+    .mobile-habit-name { font-size: 0.88rem; font-weight: 500; color: var(--brown-dark); }
     .mobile-habit-name input.edit-input {
       border: 1px solid var(--accent); border-radius: 2px; padding: 6px 8px;
       font-size: 0.92rem; font-family: 'Jost', sans-serif;
       color: var(--brown-dark); background: var(--cream); outline: none; width: 100%;
     }
     .mobile-habit-actions { display: flex; flex-shrink: 0; }
-    .mobile-days-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
-    .mobile-day-col { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-    .mobile-day-label { font-size: 0.62rem; letter-spacing: 0.3px; text-transform: uppercase; color: var(--brown-light); font-weight: 500; }
+    .mobile-days-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+    .mobile-day-col { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .mobile-day-label { font-size: 0.58rem; letter-spacing: 0.3px; text-transform: uppercase; color: var(--brown-light); font-weight: 500; }
     .mobile-check-btn {
-      width: 100%; aspect-ratio: 1; border-radius: 6px;
+      width: 100%; aspect-ratio: 1; border-radius: 5px;
       border: 1.5px solid var(--border); background: var(--cream);
       cursor: pointer; display: flex; align-items: center; justify-content: center;
       transition: background 0.15s, transform 0.08s;
-      -webkit-tap-highlight-color: transparent; min-height: 34px;
+      -webkit-tap-highlight-color: transparent; min-height: 28px;
     }
     .mobile-check-btn:active { transform: scale(0.88); }
     .mobile-check-btn.checked { background: var(--accent); border-color: var(--accent); }
@@ -1579,8 +1585,11 @@ function renderMetasList() {
       <span class="meta-num">${i+1}</span>
       <input type="text" placeholder="Describe tu meta..." value="${escHtml(m.texto||'')}"
         oninput="updateMeta(${i},'texto',this.value)" />
-      <input type="date" value="${escHtml(m.fecha||'')}"
-        oninput="updateMeta(${i},'fecha',this.value)" />
+      <div class="meta-date-wrap">
+        <span class="meta-date-label">📅 Fecha límite</span>
+        <input type="date" value="${escHtml(m.fecha||'')}"
+          oninput="updateMeta(${i},'fecha',this.value)" />
+      </div>
       ${delBtn}
     `;
     container.appendChild(row);
