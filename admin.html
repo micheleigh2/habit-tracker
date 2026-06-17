@@ -246,6 +246,40 @@
     .no-progress { text-align: center; padding: 24px 0; color: var(--brown-light); font-size: 0.85rem; font-style: italic; }
 
     .week-info { font-size: 0.72rem; color: var(--brown-light); margin-top: 4px; }
+  /* ══ VISION ADMIN ══ */
+  .vision-admin-block { padding: 16px 18px; }
+  .vision-admin-section { margin-bottom: 20px; }
+  .vision-admin-label {
+    font-size: 0.6rem; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--green); font-weight: 600; margin-bottom: 6px; display: block;
+  }
+  .vision-admin-text {
+    background: var(--cream); border-radius: 5px; padding: 10px 12px;
+    font-size: 0.88rem; color: var(--brown-dark); line-height: 1.6;
+    white-space: pre-wrap; border-left: 3px solid var(--accent); min-height: 36px;
+  }
+  .vision-admin-empty {
+    color: var(--brown-light); font-style: italic; font-size: 0.82rem;
+  }
+  .vision-admin-metas { display: flex; flex-direction: column; gap: 8px; }
+  .vision-admin-meta {
+    display: flex; align-items: flex-start; gap: 10px;
+    background: var(--cream); border-radius: 5px; padding: 8px 12px;
+    font-size: 0.85rem;
+  }
+  .vision-admin-meta-num {
+    font-size: 0.68rem; font-weight: 600; color: var(--brown-light);
+    background: var(--cream-dark); border-radius: 50%; width: 20px; height: 20px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .vision-admin-meta-body { flex: 1; }
+  .vision-admin-meta-texto { color: var(--brown-dark); line-height: 1.45; }
+  .vision-admin-meta-fecha {
+    font-size: 0.72rem; color: var(--green); margin-top: 3px;
+    display: flex; align-items: center; gap: 4px;
+  }
+
   /* Lightbox */
   .lightbox-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 3000;
@@ -674,36 +708,105 @@ async function loadClients() {
     const usuarios = {};
     usuariosSnap.forEach(doc => { usuarios[doc.id] = doc.data(); });
 
+    const habitos = {};
+    habitosSnap.forEach(doc => { habitos[doc.id] = doc.data(); });
+
+    // Unión de TODOS los docIds: los que tienen hábitos + los que solo se registraron
+    const allDocIds = new Set([...Object.keys(habitos), ...Object.keys(usuarios)]);
+
     const clients = [];
-    habitosSnap.forEach(doc => {
-      const d = doc.data();
-      if (d?.habits) clients.push({
-        docId:            doc.id,
+    allDocIds.forEach(docId => {
+      const d = habitos[docId] || {};
+      const u = usuarios[docId] || null;
+      // Incluir si tiene email en usuarios O si tiene datos en habitos
+      if (!u && !d?.habits) return;
+      clients.push({
+        docId,
         habits:           d.habits            || [],
         weeks:            d.weeks             || {},
         stats:            d.stats             || {},
         retosCompletados: d.retosCompletados  || {},
         score:            d.score             || 0,
-        usuario:          usuarios[doc.id]    || null
+        vision:           d.vision            || null,
+        usuario:          u,
+        sinHabitos:       !d?.habits,
       });
     });
 
     if (!clients.length) {
-      container.innerHTML = '<p class="client-empty">Aún no hay clientes con hábitos cargados.</p>';
+      container.innerHTML = '<p class="client-empty">Aún no hay usuarias registradas.</p>';
       return;
     }
 
-    clients.sort((a, b) => {
-      const an = a.usuario?.name || a.docId;
-      const bn = b.usuario?.name || b.docId;
+    // ── Deduplicar por email normalizado ──
+    // Si alguien entró el mismo mail con distinta capitalización o espacios,
+    // queda un solo registro: el que tiene más hábitos, con el último nombre registrado.
+    const emailIdx = {};
+    clients.forEach(c => {
+      const key = (c.usuario?.email || c.docId).toLowerCase().trim();
+      if (!emailIdx[key]) {
+        emailIdx[key] = c;
+      } else {
+        const prev = emailIdx[key];
+        // Ganador: el que tiene más hábitos (más datos)
+        const winner = c.habits.length >= prev.habits.length ? c : prev;
+        const loser  = c.habits.length >= prev.habits.length ? prev : c;
+        // Nombre: usar el del perdedor si el ganador no tiene
+        if (!winner.usuario?.name && loser.usuario?.name) {
+          winner.usuario = { ...(winner.usuario || {}), name: loser.usuario.name };
+        }
+        // Email: asegurarse que quede el email limpio
+        if (!winner.usuario?.email && loser.usuario?.email) {
+          winner.usuario = { ...(winner.usuario || {}), email: loser.usuario.email };
+        }
+        emailIdx[key] = winner;
+      }
+    });
+    const deduped = Object.values(emailIdx);
+
+    deduped.sort((a, b) => {
+      const an = a.usuario?.name || a.usuario?.email || a.docId;
+      const bn = b.usuario?.name || b.usuario?.email || b.docId;
       return an.localeCompare(bn);
     });
 
+    // Separar las que tienen hábitos de las que solo se registraron
+    const conHabitos = deduped.filter(c => !c.sinHabitos);
+    const soloMail   = deduped.filter(c =>  c.sinHabitos);
+
     container.innerHTML = '';
-    clients.forEach(c => renderClientItem(c, container));
+    conHabitos.forEach(c => renderClientItem(c, container));
+
+    if (soloMail.length) {
+      const sep = document.createElement('div');
+      sep.innerHTML = `<p style="font-size:0.78rem;text-transform:uppercase;letter-spacing:1px;color:var(--brown-light);margin:18px 0 10px;padding-top:14px;border-top:1px solid var(--border);">
+        📬 Registradas sin hábitos activos (${soloMail.length})
+      </p>`;
+      container.appendChild(sep);
+      soloMail.forEach(c => renderSimpleClient(c, container));
+    }
   } catch(e) {
     container.innerHTML = `<p class="client-empty" style="color:var(--red)">Error: ${e.message}</p>`;
   }
+}
+
+/* ══════════════════════════════════════
+   RENDER CLIENTE SIMPLE (solo mail)
+   ══════════════════════════════════════ */
+function renderSimpleClient(client, container) {
+  const email = client.usuario?.email || client.docId;
+  const name  = client.usuario?.name  || null;
+  const div   = document.createElement('div');
+  div.style.cssText = 'background:var(--white);border-radius:6px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow);';
+  div.innerHTML = `
+    <div>
+      <div style="font-size:0.88rem;font-weight:600;color:var(--brown-dark);">
+        ${name ? name + ' · ' : ''}<span style="font-weight:400;color:var(--brown-light);">${email}</span>
+      </div>
+      <div style="font-size:0.72rem;color:var(--brown-light);margin-top:3px;">⏳ Se registró pero aún no usa el tracker</div>
+    </div>
+  `;
+  container.appendChild(div);
 }
 
 /* ══════════════════════════════════════
@@ -756,6 +859,7 @@ function renderClientItem(client, container) {
         <button class="client-tab"         onclick="switchTab('${sid}','progress',this)">📊 Progreso</button>
         <button class="client-tab"         onclick="switchTab('${sid}','retos',this)">🎯 Retos <span style="font-size:0.7rem;opacity:0.7">${retosHechos}/${currentRetosConfig.length}</span></button>
         <button class="client-tab"         onclick="switchTab('${sid}','diario',this)">📔 Diario</button>
+        <button class="client-tab"         onclick="switchTab('${sid}','vision',this)">🌱 Visión</button>
       </div>
 
       <!-- TAB: Hábitos -->
@@ -799,6 +903,11 @@ function renderClientItem(client, container) {
       <div class="client-tab-pane" id="tab-diario-${sid}">
         <p class="no-progress">Abre esta pestaña para cargar...</p>
       </div>
+
+      <!-- TAB: Visión -->
+      <div class="client-tab-pane" id="tab-vision-${sid}">
+        <p class="no-progress">Abre esta pestaña para cargar...</p>
+      </div>
     </div>
   `;
   container.appendChild(div);
@@ -818,6 +927,7 @@ function switchTab(sid, tab, btn) {
   }
   if (tab === 'retos')  renderClientRetos(sid);
   if (tab === 'diario') renderClientDiario(sid, docId);
+  if (tab === 'vision') renderClientVision(sid, docId);
 }
 
 function toggleClient(sid) {
@@ -1337,6 +1447,72 @@ function openLightbox(src) {
 function closeLightbox() {
   document.getElementById('lightbox').classList.remove('show');
   document.getElementById('lightbox-img').src = '';
+}
+
+/* ══════════════════════════════════════
+   PERFIL CLIENTE — VISIÓN
+   ══════════════════════════════════════ */
+async function renderClientVision(sid, docId) {
+  const pane = document.getElementById('tab-vision-' + sid);
+  if (!pane) return;
+
+  // Intentar desde cache (clientDataMap) primero; si no, cargar desde Firestore
+  let vision = clientDataMap[sid]?.vision || null;
+
+  if (!vision) {
+    pane.innerHTML = '<p class="no-progress" style="padding:16px 0">Cargando visión...</p>';
+    try {
+      const snap = await db.collection('habitos').doc(docId).get();
+      if (snap.exists) vision = snap.data().vision || null;
+    } catch (e) {
+      pane.innerHTML = `<p class="no-progress" style="color:var(--red)">Error: ${e.message}</p>`;
+      return;
+    }
+  }
+
+  if (!vision || (!vision.futuro && (!vision.metas || vision.metas.every(m => !m.texto)) && !vision.mejoras)) {
+    pane.innerHTML = `<div class="vision-admin-block">
+      <p class="vision-admin-empty">Esta clienta aún no ha completado su sección de Visión.</p>
+    </div>`;
+    return;
+  }
+
+  // ── Metas HTML ──
+  const metasHTML = (vision.metas || []).filter(m => m.texto).map((m, i) => {
+    const fechaFmt = m.fecha
+      ? new Date(m.fecha + 'T12:00:00').toLocaleDateString('es-CL', { day:'numeric', month:'long', year:'numeric' })
+      : '';
+    return `<div class="vision-admin-meta">
+      <span class="vision-admin-meta-num">${i + 1}</span>
+      <div class="vision-admin-meta-body">
+        <div class="vision-admin-meta-texto">${m.texto.replace(/</g,'&lt;')}</div>
+        ${fechaFmt ? `<div class="vision-admin-meta-fecha">📅 <span>${fechaFmt}</span></div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  pane.innerHTML = `<div class="vision-admin-block">
+
+    <div class="vision-admin-section">
+      <span class="vision-admin-label">¿Dónde te gustaría estar en 3 años más?</span>
+      ${vision.futuro
+        ? `<div class="vision-admin-text">${vision.futuro.replace(/</g,'&lt;')}</div>`
+        : `<p class="vision-admin-empty">Sin completar.</p>`}
+    </div>
+
+    <div class="vision-admin-section">
+      <span class="vision-admin-label">Mis metas para llegar ahí</span>
+      ${metasHTML || `<p class="vision-admin-empty">Sin metas definidas.</p>`}
+    </div>
+
+    <div class="vision-admin-section" style="margin-bottom:0">
+      <span class="vision-admin-label">¿Qué mejoras traerá alcanzar estas metas?</span>
+      ${vision.mejoras
+        ? `<div class="vision-admin-text">${vision.mejoras.replace(/</g,'&lt;')}</div>`
+        : `<p class="vision-admin-empty">Sin completar.</p>`}
+    </div>
+
+  </div>`;
 }
 </script>
 </body>
