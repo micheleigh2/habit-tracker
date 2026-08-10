@@ -1264,6 +1264,12 @@
     <!-- Entradas del día -->
     <div id="diario-entries"></div>
 
+    <!-- Feedback del coach: siempre visible -->
+    <div class="coach-feedback-block coach-feedback-empty" id="coach-feedback-block">
+      <span class="coach-feedback-label">💬 Michelle - Feedback del día</span>
+      <div id="coach-feedback-content" class="coach-feedback-placeholder">Michelle aún no ha dejado feedback para este día.</div>
+    </div>
+
     <!-- Formulario: siempre visible -->
     <div class="diario-form" id="diario-form">
       <div class="diario-form-top">
@@ -1277,7 +1283,7 @@
           <button class="categoria-chip" data-cat="otro"    onclick="selectCategoria(this,'otro')">💬 Otro</button>
         </div>
       </div>
-      <textarea id="diario-text" placeholder="¿Qué comiste? ¿Cómo te sentiste antes o después? ¿Entrenaste hoy?&#10;Escribe con la libertad que quieras, sin juicios 🌿" rows="3"></textarea>
+      <textarea id="diario-text" placeholder="¿Qué comiste? ¿Cómo entrenaste? ¿Cómo te sentiste?&#10;Escríbelo sin juicios 🌿" rows="3"></textarea>
       <div class="mood-row">
         <span class="mood-label">¿Cómo te sentiste?</span>
         <div class="mood-options" id="mood-options">
@@ -2911,22 +2917,27 @@ function renderJournalEntries() {
   const entries = raw.filter(e => e && e.id).slice().sort((a, b) => (a.ts || 0) - (b.ts || 0));
   const feedback = (journalCoachFeedback[viewingJournalDate] || '').trim();
 
+  // Update the fixed feedback block
+  const fbBlock   = document.getElementById('coach-feedback-block');
+  const fbContent = document.getElementById('coach-feedback-content');
+  if (fbBlock && fbContent) {
+    if (feedback) {
+      fbBlock.classList.remove('coach-feedback-empty');
+      fbContent.className = 'coach-feedback-text';
+      fbContent.textContent = feedback;
+    } else {
+      fbBlock.classList.add('coach-feedback-empty');
+      fbContent.className = 'coach-feedback-placeholder';
+      fbContent.textContent = 'Michelle aún no ha dejado feedback para este día.';
+    }
+  }
+
   if (!entries.length) {
-    const emptyMsg = '<div class="diario-empty">Todavía no hay entradas para este día.<br>¡Escribe tu primera actividad! 🌿</div>';
-    const feedbackBlock = feedback
-      ? `<div class="coach-feedback-block">
-          <span class="coach-feedback-label">💬 Feedback de tu coach</span>
-          <div class="coach-feedback-text">${feedback.replace(/</g,'&lt;')}</div>
-        </div>`
-      : `<div class="coach-feedback-block coach-feedback-empty">
-          <span class="coach-feedback-label">💬 Feedback de tu coach</span>
-          <div class="coach-feedback-placeholder">Michelle aún no ha dejado feedback para este día.</div>
-        </div>`;
-    el.innerHTML = emptyMsg + feedbackBlock;
+    el.innerHTML = '<div class="diario-empty">Todavía no hay entradas para este día.<br>¡Escribe tu primera actividad! 🌿</div>';
     return;
   }
 
-  const entriesHTML = entries.map(e => {
+  el.innerHTML = entries.map(e => {
     const cat = e.categoria && CATEGORIA_META[e.categoria] ? CATEGORIA_META[e.categoria] : null;
     return `
     <div class="diario-entry" id="je-${e.id}">
@@ -2940,18 +2951,6 @@ function renderJournalEntries() {
       <button class="btn-delete-entry" onclick="deleteJournalEntry('${viewingJournalDate}','${e.id}')">✕</button>
     </div>`;
   }).join('');
-
-  const feedbackHTML = feedback
-    ? `<div class="coach-feedback-block">
-        <span class="coach-feedback-label">💬 Feedback de tu coach</span>
-        <div class="coach-feedback-text">${feedback.replace(/</g,'&lt;')}</div>
-      </div>`
-    : `<div class="coach-feedback-block coach-feedback-empty">
-        <span class="coach-feedback-label">💬 Feedback de tu coach</span>
-        <div class="coach-feedback-placeholder">Michelle aún no ha dejado feedback para este día.</div>
-      </div>`;
-
-  el.innerHTML = entriesHTML + feedbackHTML;
 }
 
 function selectCategoria(btn, cat) {
