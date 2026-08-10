@@ -15,23 +15,23 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --cream:       #F3EBE9;
-      --cream-dark:  #E7CEC6;
-      --brown-dark:  #2E1D1B;
-      --brown-mid:   #8a5f56;
-      --brown-light: #B2897D;
-      --brown-pale:  #E7CEC6;
-      --accent:      #D8A698;
-      --accent-dark: #B2897D;
-      --white:       #ffffff;
-      --border:      #E7CEC6;
+      --cream:       #F8E8D7;
+      --cream-dark:  #E8D3BC;
+      --brown-dark:  #3F2417;
+      --brown-mid:   #625347;
+      --brown-light: #9A8070;
+      --brown-pale:  #E8D3BC;
+      --accent:      #C0A28D;
+      --accent-dark: #9A8070;
+      --white:       #FFF8F0;
+      --border:      #DCC5AE;
       --red:         #b94040;
       --red-pale:    #fdf0f0;
       --gold:        #e8a030;
       --gold-pale:   #fff4e6;
       --green:       #4a7c59;
-      --shadow:      0 2px 16px rgba(46,29,27,0.08);
-      --shadow-lg:   0 8px 40px rgba(46,29,27,0.14);
+      --shadow:      0 2px 16px rgba(63,36,23,0.08);
+      --shadow-lg:   0 8px 40px rgba(63,36,23,0.14);
       --touch:       44px;
     }
 
@@ -278,7 +278,7 @@
     thead th.actions-col { width: 50px; }
     tbody tr { border-top: 1px solid var(--border); transition: background 0.12s; }
     tbody tr:hover { background: var(--cream); }
-    td.habit-name { padding: 11px 6px 11px 18px; font-size: 0.9rem; }
+    td.habit-name { padding: 7px 6px 7px 18px; font-size: 0.9rem; }
     td.habit-name input.edit-input {
       border: 1px solid var(--accent); border-radius: 2px; padding: 4px 8px;
       font-size: 0.88rem; font-family: 'Jost', sans-serif;
@@ -328,8 +328,8 @@
     .empty-row td { padding: 32px; text-align: center; color: var(--brown-light); font-size: 0.9rem; }
 
     /* Mobile habit cards */
-    .mobile-habit-card { border-top: 1px solid var(--border); padding: 10px 12px; }
-    .mobile-habit-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    .mobile-habit-card { border-top: 1px solid var(--border); padding: 6px 12px; }
+    .mobile-habit-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
     .mobile-habit-name-wrap { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
     .mobile-habit-name { font-size: 0.88rem; font-weight: 500; color: var(--brown-dark); }
     .mobile-habit-name input.edit-input {
@@ -805,6 +805,48 @@
 
     /* Mood */
     .mood-row { margin: 12px 0 10px; }
+    /* Categoría */
+    .categoria-row { margin-bottom: 10px; }
+    .categoria-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .categoria-chip {
+      display: flex; align-items: center; gap: 5px;
+      background: var(--cream); border: 1.5px solid var(--border); border-radius: 20px;
+      padding: 5px 12px; font-size: 0.78rem; color: var(--brown-mid);
+      cursor: pointer; font-family: 'Jost', sans-serif;
+      -webkit-tap-highlight-color: transparent; transition: border-color 0.15s, background 0.15s;
+    }
+    .categoria-chip.selected { border-color: var(--green); background: var(--white); color: var(--brown-dark); font-weight: 500; }
+
+    /* Badge en entrada */
+    .diario-entry-categoria {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 0.62rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px;
+      background: var(--cream); border-radius: 10px; padding: 2px 8px; color: var(--brown-light);
+    }
+    .diario-entry-categoria.cat-comida  { background: #fff0eb; color: #c07850; }
+    .diario-entry-categoria.cat-deporte { background: #ebf5f0; color: var(--green); }
+    .diario-entry-categoria.cat-otro    { background: var(--cream); color: var(--brown-light); }
+
+    /* Feedback del coach */
+    .coach-feedback-block {
+      background: #EDE0D4; border-radius: 8px;
+      padding: 12px 16px; margin: 4px 0 12px;
+      border-left: 5px solid var(--accent);
+    }
+    .coach-feedback-label {
+      font-size: 0.62rem; text-transform: uppercase; letter-spacing: 1.2px;
+      color: var(--brown-mid); font-weight: 700; margin-bottom: 6px; display: block;
+    }
+    .coach-feedback-text {
+      font-size: 0.87rem; color: var(--brown-dark); line-height: 1.6;
+      white-space: pre-wrap; word-break: break-word;
+    }
+    .coach-feedback-empty { border-left-color: var(--accent); }
+    .coach-feedback-empty .coach-feedback-label { color: var(--brown-mid); }
+    .coach-feedback-placeholder {
+      font-size: 0.82rem; color: var(--brown-light); font-style: italic;
+    }
+
     .mood-label { font-size: 0.74rem; color: var(--brown-light); text-transform: uppercase;
       letter-spacing: 0.8px; margin-bottom: 8px; display: block; }
     .mood-options { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -839,6 +881,114 @@
       -webkit-tap-highlight-color: transparent;
     }
     .btn-add-entry:active { opacity: 0.85; }
+
+    /* ══ COMUNIDAD / CHAT ══ */
+    .comunidad-wrap { display: flex; flex-direction: column; gap: 0; height: calc(100vh - 220px); min-height: 360px; }
+    .comunidad-join {
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 32px 24px;
+      background: var(--white); border-radius: 8px; box-shadow: var(--shadow);
+    }
+    .comunidad-join-icon { font-size: 2.8rem; margin-bottom: 14px; }
+    .comunidad-join h3 {
+      font-family: 'Cormorant Garamond', serif; font-size: 1.35rem; font-weight: 500;
+      color: var(--brown-dark); margin-bottom: 10px;
+    }
+    .comunidad-join p { font-size: 0.88rem; color: var(--brown-mid); line-height: 1.6; max-width: 320px; margin-bottom: 24px; }
+    .btn-join-comunidad {
+      background: var(--green); color: #fff; border: none; border-radius: 6px;
+      padding: 11px 28px; font-family: 'Jost', sans-serif; font-size: 0.82rem;
+      font-weight: 500; letter-spacing: 1.2px; text-transform: uppercase;
+      cursor: pointer; transition: background 0.2s; margin-bottom: 12px;
+    }
+    .btn-join-comunidad:hover { background: #3a6647; }
+    .btn-join-skip {
+      background: none; border: none; font-family: 'Jost', sans-serif;
+      font-size: 0.78rem; color: var(--brown-light); cursor: pointer; text-decoration: underline;
+    }
+    .chat-header {
+      background: var(--white); border-radius: 8px 8px 0 0; box-shadow: var(--shadow);
+      padding: 10px 16px; display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .chat-header-title { font-size: 0.82rem; font-weight: 600; color: var(--brown-dark); }
+    .chat-header-sub { font-size: 0.68rem; color: var(--brown-light); }
+    .chat-online-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); display: inline-block; margin-right: 5px; }
+    .chat-messages {
+      flex: 1; overflow-y: auto; padding: 12px 14px; background: var(--cream);
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .chat-empty { text-align: center; color: var(--brown-light); font-size: 0.84rem; font-style: italic; padding: 32px 0; }
+    .chat-msg { display: flex; align-items: flex-end; gap: 8px; max-width: 85%; }
+    .chat-msg.mine { align-self: flex-end; flex-direction: row-reverse; }
+    .chat-msg.other { align-self: flex-start; }
+    .chat-avatar {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--accent); color: var(--white);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.78rem; font-weight: 600; flex-shrink: 0;
+    }
+    .chat-msg-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .chat-msg.mine .chat-msg-body { align-items: flex-end; }
+    .chat-msg.other .chat-msg-body { align-items: flex-start; }
+    .chat-msg-name { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--brown-light); font-weight: 600; padding: 0 4px; }
+    .chat-bubble {
+      padding: 9px 13px; border-radius: 14px; max-width: 100%;
+      word-break: break-word; font-size: 0.88rem; line-height: 1.5;
+    }
+    .chat-msg.mine  .chat-bubble { background: var(--brown-dark); color: #fff; border-radius: 14px 14px 3px 14px; }
+    .chat-msg.other .chat-bubble { background: var(--white); color: var(--brown-dark); border-radius: 14px 14px 14px 3px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+    .chat-bubble-photo {
+      max-width: 180px; max-height: 180px; width: auto; height: auto;
+      border-radius: 8px; display: block; margin-top: 6px; cursor: zoom-in;
+      object-fit: contain;
+    }
+    .chat-msg-time {
+      font-size: 0.6rem; color: var(--brown-light); padding: 0 4px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .btn-delete-chat {
+      background: none; border: none; cursor: pointer; color: var(--border);
+      font-size: 0.75rem; padding: 0; line-height: 1; transition: color 0.15s;
+    }
+    .btn-delete-chat:hover { color: var(--red); }
+    .chat-input-bar {
+      display: flex; align-items: flex-end; gap: 8px;
+      background: var(--white); border-radius: 0 0 8px 8px;
+      padding: 10px 12px; border-top: 1px solid var(--border); flex-shrink: 0;
+      box-shadow: var(--shadow);
+    }
+    .chat-textarea {
+      flex: 1; border: 1.5px solid var(--border); border-radius: 18px;
+      padding: 8px 14px; font-family: 'Jost', sans-serif; font-size: 0.88rem;
+      color: var(--brown-dark); background: var(--cream); outline: none;
+      resize: none; overflow: hidden; line-height: 1.4; min-height: 36px; max-height: 90px;
+      transition: border-color 0.2s;
+    }
+    .chat-textarea:focus { border-color: var(--green); background: var(--white); }
+    .btn-chat-photo {
+      background: none; border: 1.5px solid var(--border); border-radius: 50%;
+      width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 1rem; flex-shrink: 0; transition: border-color 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-chat-photo:hover { border-color: var(--green); }
+    .btn-chat-send {
+      background: var(--green); color: #fff; border: none; border-radius: 50%;
+      width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 1rem; flex-shrink: 0; transition: background 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-chat-send:hover { background: #3a6647; }
+    .chat-photo-preview {
+      display: flex; align-items: center; gap: 8px; padding: 4px 12px 0;
+      background: var(--white);
+    }
+    .chat-photo-preview img { width: 44px; height: 44px; object-fit: cover; border-radius: 6px; }
+    .btn-remove-chat-photo {
+      background: var(--cream-dark); border: none; border-radius: 50%; width: 20px; height: 20px;
+      cursor: pointer; font-size: 0.65rem; display: flex; align-items: center; justify-content: center; color: var(--brown-mid);
+    }
   </style>
 </head>
 <body>
@@ -854,30 +1004,17 @@
     <div class="gate-leaf">🌿</div>
     <h1>Tracker de Hábitos</h1>
     <p class="gate-brand">Revolución Saludable</p>
-
-    <!-- Paso 1: solo email (siempre visible primero) -->
-    <div id="gate-s1">
-      <p class="gate-desc">Ingresa tu correo para acceder a tu tracker. Tus hábitos quedan guardados en la nube.</p>
-      <div class="gate-field">
-        <label for="gate-email">Correo electrónico</label>
-        <input type="email" id="gate-email" placeholder="tu@correo.com" autocomplete="email" />
-        <div class="gate-error" id="err-email">Por favor ingresa un correo válido.</div>
-      </div>
-      <button class="btn-gate" id="btn-continuar" onclick="checkEmailStep()">Continuar →</button>
+    <p class="gate-desc">Ingresa tus datos para acceder a tu tracker.</p>
+    <div class="gate-field">
+      <label for="gate-email">Correo electrónico</label>
+      <input type="email" id="gate-email" placeholder="tu@correo.com" autocomplete="email" />
     </div>
-
-    <!-- Paso 2: solo para nuevas usuarias (nombre) -->
-    <div id="gate-s2" style="display:none">
-      <p class="gate-desc">¡Bienvenida! Es tu primera vez. ¿Cómo te llamas?</p>
-      <div class="gate-field">
-        <label for="gate-name">Nombre</label>
-        <input type="text" id="gate-name" placeholder="Tu nombre" autocomplete="given-name" />
-        <div class="gate-error" id="err-name">Por favor ingresa tu nombre.</div>
-      </div>
-      <button class="btn-gate" id="btn-empezar" onclick="submitGateNew()">Empezar →</button>
-      <button class="btn-gate-back" onclick="showGateStep1()">← Cambiar correo</button>
+    <div class="gate-field">
+      <label for="gate-name">Tu nombre</label>
+      <input type="text" id="gate-name" placeholder="¿Cómo te llamas? (solo la primera vez)" autocomplete="given-name" />
     </div>
-
+    <div class="gate-error" id="err-gate" style="display:none"></div>
+    <button class="btn-gate" id="btn-entrar" onclick="submitGate()">Entrar →</button>
     <p class="gate-privacy">🔒 Tu información es privada y queda guardada en la nube.</p>
   </div>
 </div>
@@ -895,9 +1032,10 @@
 
   <div class="tabs">
     <button class="tab-btn" onclick="switchTab('vision',this)">🌱 Visión</button>
+    <button class="tab-btn" onclick="switchTab('diario',this)">📔 Sport & Food</button>
     <button class="tab-btn active" onclick="switchTab('tracker',this)">Mi Tracker</button>
     <button class="tab-btn" onclick="switchTab('retos',this)">📋 Retos</button>
-    <button class="tab-btn" onclick="switchTab('diario',this)">📔 Food Journal</button>
+    <button class="tab-btn" onclick="switchTab('comunidad',this)" style="display:none">💬 Comunidad</button>
     <button class="tab-btn" onclick="switchTab('ranking',this)">🏅 Mi Ranking</button>
     <button class="tab-btn" onclick="switchTab('info',this)">Información</button>
   </div>
@@ -1107,6 +1245,13 @@
   </div>
 
   <!-- TAB FOOD JOURNAL -->
+  <!-- TAB COMUNIDAD -->
+  <div class="tab-pane" id="tab-comunidad">
+    <div class="comunidad-wrap" id="comunidad-wrap">
+      <!-- renderizado por JS -->
+    </div>
+  </div>
+
   <div class="tab-pane" id="tab-diario">
 
     <!-- Navegación de fecha -->
@@ -1125,7 +1270,14 @@
         <span class="diario-form-time" id="diario-form-time">—</span>
         <span class="diario-form-hint">Nueva entrada</span>
       </div>
-      <textarea id="diario-text" placeholder="¿Qué comiste? ¿Cómo te sentiste antes o después?&#10;Escribe con la libertad que quieras, sin juicios 🌿" rows="3"></textarea>
+      <div class="categoria-row">
+        <div class="categoria-chips">
+          <button class="categoria-chip" data-cat="comida"  onclick="selectCategoria(this,'comida')">🍽️ Comida</button>
+          <button class="categoria-chip" data-cat="deporte" onclick="selectCategoria(this,'deporte')">🏃 Deporte</button>
+          <button class="categoria-chip" data-cat="otro"    onclick="selectCategoria(this,'otro')">💬 Otro</button>
+        </div>
+      </div>
+      <textarea id="diario-text" placeholder="¿Qué comiste? ¿Cómo te sentiste antes o después? ¿Entrenaste hoy?&#10;Escribe con la libertad que quieras, sin juicios 🌿" rows="3"></textarea>
       <div class="mood-row">
         <span class="mood-label">¿Cómo te sentiste?</span>
         <div class="mood-options" id="mood-options">
@@ -1313,6 +1465,7 @@ const FIREBASE_CONFIG = {
 
 let db = null;
 let currentUserEmail = null;   // email del usuario activo, clave en Firestore
+let currentUserName  = '';     // nombre del usuario activo
 
 /* ── Convierte email a doc ID seguro para Firestore (sin barras) ── */
 function emailToDocId(email) {
@@ -1379,6 +1532,8 @@ let state = loadState();
 let viewingWeek = getMonday();
 let viewingJournalDate = todayISO();
 let journalData        = {};
+let journalCoachFeedback = {};
+let selectedCategoria  = null;
 let selectedMood       = null;
 let pendingPhoto       = null;
 
@@ -2724,9 +2879,11 @@ function initJournalForm() {
   const mm  = String(now.getMinutes()).padStart(2, '0');
   document.getElementById('diario-form-time').textContent = hh + ':' + mm;
   document.getElementById('diario-text').value = '';
-  selectedMood  = null;
-  pendingPhoto  = null;
+  selectedMood      = null;
+  selectedCategoria = null;
+  pendingPhoto      = null;
   document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.categoria-chip').forEach(b => b.classList.remove('selected'));
   document.getElementById('diario-photo-preview').style.display = 'none';
 }
 
@@ -2742,26 +2899,69 @@ function renderJournalDateLabel() {
   document.getElementById('diario-date-label').textContent = label.charAt(0).toUpperCase() + label.slice(1);
 }
 
+const CATEGORIA_META = {
+  comida:  { icon: '🍽️', label: 'Comida',  cls: 'cat-comida'  },
+  deporte: { icon: '🏃',  label: 'Deporte', cls: 'cat-deporte' },
+  otro:    { icon: '💬',  label: 'Otro',    cls: 'cat-otro'    },
+};
+
 function renderJournalEntries() {
   const el      = document.getElementById('diario-entries');
-  const entries = (journalData[viewingJournalDate] || []).slice().sort((a, b) => (a.ts || 0) - (b.ts || 0));
+  const raw     = journalData[viewingJournalDate] || [];
+  const entries = raw.filter(e => e && e.id).slice().sort((a, b) => (a.ts || 0) - (b.ts || 0));
+  const feedback = (journalCoachFeedback[viewingJournalDate] || '').trim();
 
   if (!entries.length) {
-    el.innerHTML = '<div class="diario-empty">Todavía no hay entradas para este día.<br>¡Escribe tu primera comida! 🥗</div>';
+    const emptyMsg = '<div class="diario-empty">Todavía no hay entradas para este día.<br>¡Escribe tu primera actividad! 🌿</div>';
+    const feedbackBlock = feedback
+      ? `<div class="coach-feedback-block">
+          <span class="coach-feedback-label">💬 Feedback de tu coach</span>
+          <div class="coach-feedback-text">${feedback.replace(/</g,'&lt;')}</div>
+        </div>`
+      : `<div class="coach-feedback-block coach-feedback-empty">
+          <span class="coach-feedback-label">💬 Feedback de tu coach</span>
+          <div class="coach-feedback-placeholder">Michelle aún no ha dejado feedback para este día.</div>
+        </div>`;
+    el.innerHTML = emptyMsg + feedbackBlock;
     return;
   }
 
-  el.innerHTML = entries.map(e => `
+  const entriesHTML = entries.map(e => {
+    const cat = e.categoria && CATEGORIA_META[e.categoria] ? CATEGORIA_META[e.categoria] : null;
+    return `
     <div class="diario-entry" id="je-${e.id}">
       <div class="diario-entry-header">
         <span class="diario-entry-time">${e.time || ''}</span>
+        ${cat ? `<span class="diario-entry-categoria ${cat.cls}">${cat.icon} ${cat.label}</span>` : ''}
         ${e.mood ? `<span class="diario-entry-mood">${e.mood}</span>` : ''}
       </div>
       <div class="diario-entry-text">${e.text.replace(/</g,'&lt;')}</div>
-      ${e.photo ? `<div class="diario-entry-photo"><img src="${e.photo}" loading="lazy" alt="foto comida" onclick="openLightbox(this.src)"></div>` : ''}
+      ${e.photo ? `<div class="diario-entry-photo"><img src="${e.photo}" loading="lazy" alt="foto" onclick="openLightbox(this.src)"></div>` : ''}
       <button class="btn-delete-entry" onclick="deleteJournalEntry('${viewingJournalDate}','${e.id}')">✕</button>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
+
+  const feedbackHTML = feedback
+    ? `<div class="coach-feedback-block">
+        <span class="coach-feedback-label">💬 Feedback de tu coach</span>
+        <div class="coach-feedback-text">${feedback.replace(/</g,'&lt;')}</div>
+      </div>`
+    : `<div class="coach-feedback-block coach-feedback-empty">
+        <span class="coach-feedback-label">💬 Feedback de tu coach</span>
+        <div class="coach-feedback-placeholder">Michelle aún no ha dejado feedback para este día.</div>
+      </div>`;
+
+  el.innerHTML = entriesHTML + feedbackHTML;
+}
+
+function selectCategoria(btn, cat) {
+  document.querySelectorAll('.categoria-chip').forEach(b => b.classList.remove('selected'));
+  if (selectedCategoria === cat) {
+    selectedCategoria = null;
+  } else {
+    btn.classList.add('selected');
+    selectedCategoria = cat;
+  }
 }
 
 function renderJournal() {
@@ -2791,12 +2991,13 @@ async function addJournalEntry() {
   const mm  = String(now.getMinutes()).padStart(2,'0');
 
   const entry = {
-    id:    'fj_' + Date.now(),
-    time:  hh + ':' + mm,
+    id:        'fj_' + Date.now(),
+    time:      hh + ':' + mm,
     text,
-    mood:  selectedMood || null,
-    photo: pendingPhoto  || null,
-    ts:    Date.now(),
+    categoria: selectedCategoria || null,
+    mood:      selectedMood  || null,
+    photo:     pendingPhoto  || null,
+    ts:        Date.now(),
   };
 
   if (!journalData[viewingJournalDate]) journalData[viewingJournalDate] = [];
@@ -2828,15 +3029,23 @@ async function loadJournal() {
   if (!db || !currentUserEmail) return;
   try {
     const snap = await db.collection('diario').doc(emailToDocId(currentUserEmail)).get();
-    if (snap.exists) journalData = snap.data() || {};
+    if (snap.exists) {
+      const data = snap.data() || {};
+      journalCoachFeedback = data.coachFeedback || {};
+      // Solo guardar entradas (claves de fecha), no el objeto coachFeedback
+      journalData = {};
+      Object.keys(data).forEach(k => {
+        if (k !== 'coachFeedback') journalData[k] = data[k];
+      });
+    }
   } catch {}
   renderJournal();
 }
 
 /* ══════════ GATE ══════════ */
 async function initGate() {
-  document.getElementById('gate-email').addEventListener('keydown', e => { if (e.key === 'Enter') checkEmailStep(); });
-  document.getElementById('gate-name').addEventListener('keydown',  e => { if (e.key === 'Enter') submitGateNew(); });
+  document.getElementById('gate-email').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('gate-name').focus(); } });
+  document.getElementById('gate-name').addEventListener('keydown',  e => { if (e.key === 'Enter') { e.preventDefault(); submitGate(); } });
 
   const gate    = document.getElementById('gate');
   const gateBox = gate.querySelector('.gate-box');
@@ -2975,26 +3184,26 @@ async function getUserAsync() {
   return null;
 }
 
-/* Paso 1: chequea email → si existe en Firestore entra directo, si no pide nombre */
-async function checkEmailStep() {
-  const emailEl  = document.getElementById('gate-email');
-  const errEmail = document.getElementById('err-email');
-  const btn      = document.getElementById('btn-continuar');
-  errEmail.style.display = 'none';
+/* Formulario unificado: email + nombre en un solo paso */
+async function submitGate() {
+  const emailVal = document.getElementById('gate-email').value.trim().toLowerCase();
+  const nameVal  = document.getElementById('gate-name').value.trim();
+  const errEl    = document.getElementById('err-gate');
+  const btn      = document.getElementById('btn-entrar');
+  errEl.style.display = 'none';
 
-  const emailVal = emailEl.value.trim().toLowerCase();
   if (!emailVal || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
-    errEmail.style.display = 'block'; return;
+    errEl.textContent = 'Por favor ingresa un correo válido.';
+    errEl.style.display = 'block'; return;
   }
 
   btn.disabled = true; btn.textContent = 'Buscando...';
   currentUserEmail = emailVal;
 
   try {
-    // ¿Ya existe este usuario en Firestore?
     const existingUser = await loadUserFromCloud(emailVal);
     if (existingUser?.name) {
-      // Usuaria conocida → entrar de inmediato, cargar datos en segundo plano
+      // Usuario conocido → entrar con nombre guardado
       const user = { name: existingUser.name, email: emailVal };
       saveUser(user);
       unlockApp(user.name, user.email, true);
@@ -3003,47 +3212,29 @@ async function checkEmailStep() {
     }
   } catch {}
 
-  // Usuaria nueva → pedir nombre
-  btn.disabled = false; btn.textContent = 'Continuar →';
-  document.getElementById('gate-s1').style.display = 'none';
-  document.getElementById('gate-s2').style.display = 'block';
-  setTimeout(() => document.getElementById('gate-name').focus(), 50);
-}
+  // Usuario nuevo — necesita nombre
+  if (!nameVal) {
+    btn.disabled = false; btn.textContent = 'Entrar →';
+    errEl.textContent = '¡Bienvenid@! Es tu primera vez — ingresa también tu nombre.';
+    errEl.style.display = 'block';
+    document.getElementById('gate-name').focus();
+    return;
+  }
 
-/* Paso 2: solo para usuarias nuevas, guarda nombre + email */
-async function submitGateNew() {
-  const nameEl  = document.getElementById('gate-name');
-  const errName = document.getElementById('err-name');
-  const btn     = document.getElementById('btn-empezar');
-  errName.style.display = 'none';
-
-  if (!nameEl.value.trim()) { errName.style.display = 'block'; return; }
-
-  const emailVal = document.getElementById('gate-email').value.trim().toLowerCase();
-  const user     = { name: nameEl.value.trim(), email: emailVal };
-  btn.disabled = true; btn.textContent = 'Entrando...';
-
+  const user = { name: nameVal, email: emailVal };
   currentUserEmail = emailVal;
-  saveUser(user);                    // guardar ANTES de abrir la app
-  unlockApp(user.name, user.email, true);  // cerrar gate de inmediato
-  loadFromCloud(emailVal).then(ok => { if (ok) { render(); renderVision(); } });  // cargar nube en segundo plano
+  saveUser(user);
+  unlockApp(user.name, user.email, true);
+  loadFromCloud(emailVal).then(ok => { if (ok) { render(); renderVision(); } });
   const body = new URLSearchParams();
   body.append(FIELD_NAME, user.name); body.append(FIELD_EMAIL, user.email);
   fetch(FORM_URL, { method: 'POST', mode: 'no-cors', body }).catch(() => {});
-}
-
-/* Volver al paso 1 */
-function showGateStep1() {
-  document.getElementById('gate-s2').style.display = 'none';
-  document.getElementById('gate-s1').style.display = 'block';
-  const btn = document.getElementById('btn-continuar');
-  btn.disabled = false; btn.textContent = 'Continuar →';
-  document.getElementById('gate-email').focus();
 }
 function unlockApp(name, email, animate) {
   const gate = document.getElementById('gate');
   if (animate) { gate.style.opacity = '0'; setTimeout(() => gate.classList.add('hidden'), 500); }
   else gate.classList.add('hidden');
+  currentUserName = name || email || '';
   document.getElementById('user-greeting').textContent = 'Hola, ' + name.split(' ')[0] + ' 👋';
   // Guardar email en la URL → persiste en el historial/bookmarks del browser
   try {
@@ -3064,14 +3255,200 @@ function switchTab(id, btn) {
   document.getElementById('tab-' + id).classList.add('active');
   btn.classList.add('active');
   if (id === 'ranking') fetchGlobalRanking();
-  if (id === 'diario')  { viewingJournalDate = todayISO(); initJournalForm(); loadJournal(); }
-  if (id === 'vision')  renderVision();
+  if (id === 'diario')  { viewingJournalDate = todayISO(); initJournalForm(); renderJournalDateLabel(); loadJournal(); }
+  if (id === 'vision')    renderVision();
+  if (id === 'comunidad') initComunidad();
 }
 let toastTimer;
 function showToast(msg) {
   const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
   clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
 }
+
+/* ══════════════════════════════════════
+   COMUNIDAD — CHAT GRUPAL
+   ══════════════════════════════════════ */
+let comunidadUnsubscribe = null;
+let pendingChatPhoto     = null;
+let chatMessages         = [];
+
+/* ── Entrar al tab ── */
+function initComunidad() {
+  const wrap = document.getElementById('comunidad-wrap');
+  if (!wrap) return;
+  if (!state.comunidadJoined) {
+    renderComunidadJoin(wrap);
+  } else {
+    renderComunidadChat(wrap);
+    subscribeComunidad();
+  }
+}
+
+/* ── Pantalla de bienvenida / opt-in ── */
+function renderComunidadJoin(wrap) {
+  wrap.innerHTML = `
+    <div class="comunidad-join">
+      <div class="comunidad-join-icon">💬</div>
+      <h3>Comunidad Revolución Saludable</h3>
+      <p>Un espacio para compartir avances, fotos y motivación con otras participantes que también están en este camino. Es completamente opcional y puedes unirte cuando quieras.</p>
+      <button class="btn-join-comunidad" onclick="joinComunidad()">Unirme a la comunidad</button>
+      <button class="btn-join-skip" onclick="switchTab('tracker', document.querySelector('.tab-btn.active'))">Ahora no</button>
+    </div>`;
+}
+
+/* ── Unirse ── */
+function joinComunidad() {
+  state.comunidadJoined = true;
+  saveState();
+  const wrap = document.getElementById('comunidad-wrap');
+  if (wrap) { renderComunidadChat(wrap); subscribeComunidad(); }
+}
+
+/* ── Estructura del chat ── */
+function renderComunidadChat(wrap) {
+  wrap.innerHTML = `
+    <div class="chat-header">
+      <div>
+        <div class="chat-header-title"><span class="chat-online-dot"></span>Comunidad</div>
+        <div class="chat-header-sub">Revolución Saludable · Comparte tus avances</div>
+      </div>
+    </div>
+    <div class="chat-messages" id="chat-messages">
+      <div class="chat-empty">Cargando mensajes...</div>
+    </div>
+    <div id="chat-photo-preview-bar" class="chat-photo-preview" style="display:none">
+      <img id="chat-photo-thumb" src="" alt="foto">
+      <button class="btn-remove-chat-photo" onclick="removeChatPhoto()">✕</button>
+    </div>
+    <div class="chat-input-bar">
+      <input type="file" id="chat-photo-input" accept="image/*" style="display:none" onchange="handleChatPhoto(event)">
+      <button class="btn-chat-photo" onclick="document.getElementById('chat-photo-input').click()" title="Agregar foto">📷</button>
+      <textarea class="chat-textarea" id="chat-input"
+        placeholder="Escribe algo para la comunidad..." rows="1"
+        oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,90)+'px'"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage();}"></textarea>
+      <button class="btn-chat-send" onclick="sendChatMessage()" title="Enviar">▶</button>
+    </div>`;
+}
+
+/* ── Suscripción en tiempo real ── */
+function subscribeComunidad() {
+  if (comunidadUnsubscribe || !db) return;
+  comunidadUnsubscribe = db.collection('comunidad')
+    .orderBy('ts')
+    .limitToLast(80)
+    .onSnapshot(snap => {
+      chatMessages = snap.docs.map(d => d.data());
+      renderChatMessages();
+    }, () => {
+      const el = document.getElementById('chat-messages');
+      if (el) el.innerHTML = '<div class="chat-empty">Error al conectar. Recarga la página.</div>';
+    });
+}
+
+/* ── Renderizar mensajes ── */
+function renderChatMessages() {
+  const el = document.getElementById('chat-messages');
+  if (!el) return;
+
+  const wasAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+
+  if (!chatMessages.length) {
+    el.innerHTML = '<div class="chat-empty">Sé la primera en escribir algo! 🌿</div>';
+    return;
+  }
+
+  el.innerHTML = chatMessages.map(m => {
+    const isMine  = m.email === currentUserEmail;
+    const initials = (m.name || m.email || '?').charAt(0).toUpperCase();
+    const d       = new Date(m.ts);
+    const now     = new Date();
+    const sameDay = d.toDateString() === now.toDateString();
+    const timeStr = sameDay
+      ? d.toLocaleTimeString('es-CL', { hour:'2-digit', minute:'2-digit' })
+      : d.toLocaleDateString('es-CL', { day:'numeric', month:'short' }) + ' ' + d.toLocaleTimeString('es-CL', { hour:'2-digit', minute:'2-digit' });
+    const firstName = (m.name || m.email || '').split(' ')[0];
+
+    return `
+    <div class="chat-msg ${isMine ? 'mine' : 'other'}">
+      ${!isMine ? `<div class="chat-avatar">${initials}</div>` : ''}
+      <div class="chat-msg-body">
+        ${!isMine ? `<div class="chat-msg-name">${firstName.replace(/</g,'&lt;')}</div>` : ''}
+        <div class="chat-bubble">
+          ${m.text  ? `<div>${escHtml(m.text).split('\n').join('<br>')}</div>` : ''}
+          ${m.photo ? `<img class="chat-bubble-photo" src="${m.photo}" loading="lazy" onclick="openLightbox(this.src)">` : ''}
+        </div>
+        <div class="chat-msg-time">
+          ${timeStr}
+          ${isMine ? `<button class="btn-delete-chat" onclick="deleteChatMessage('${m.id}')" title="Borrar">✕</button>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  if (wasAtBottom) el.scrollTop = el.scrollHeight;
+}
+
+/* ── Enviar mensaje ── */
+async function sendChatMessage() {
+  const input = document.getElementById('chat-input');
+  if (!input) return;
+  const text  = (input.value || '').trim();
+  if (!text && !pendingChatPhoto) { return; }
+  if (!currentUserEmail) { showToast('Inicia sesión para participar'); return; }
+
+  const msg = {
+    id:    'cm_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+    email: currentUserEmail,
+    name:  currentUserName || currentUserEmail,
+    text:  text || '',
+    photo: pendingChatPhoto || null,
+    ts:    Date.now(),
+  };
+
+  input.value = '';
+  input.style.height = 'auto';
+  removeChatPhoto();
+
+  try {
+    await db.collection('comunidad').doc(msg.id).set(msg);
+  } catch (e) {
+    showToast('Error al enviar: ' + e.message);
+  }
+}
+
+/* ── Borrar mensaje propio ── */
+async function deleteChatMessage(id) {
+  if (!confirm('¿Borrar este mensaje?')) return;
+  try {
+    await db.collection('comunidad').doc(id).delete();
+  } catch (e) { showToast('Error: ' + e.message); }
+}
+
+/* ── Foto ── */
+function handleChatPhoto(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  const maxMB = 1.5;
+  if (file.size > maxMB * 1024 * 1024) { showToast('La foto es muy grande (máx ' + maxMB + 'MB)'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    pendingChatPhoto = e.target.result;
+    const bar   = document.getElementById('chat-photo-preview-bar');
+    const thumb = document.getElementById('chat-photo-thumb');
+    if (bar && thumb) { thumb.src = pendingChatPhoto; bar.style.display = 'flex'; }
+  };
+  reader.readAsDataURL(file);
+  evt.target.value = '';
+}
+
+function removeChatPhoto() {
+  pendingChatPhoto = null;
+  const bar = document.getElementById('chat-photo-preview-bar');
+  if (bar) bar.style.display = 'none';
+}
+
+
 document.getElementById('new-habit-input').addEventListener('keydown', e => { if (e.key === 'Enter') addHabit(); });
 document.getElementById('week-comment').addEventListener('input', onCommentInput);
 

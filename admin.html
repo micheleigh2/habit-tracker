@@ -12,22 +12,22 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --cream:       #F3EBE9;
-      --cream-dark:  #E7CEC6;
-      --brown-dark:  #2E1D1B;
-      --brown-mid:   #8a5f56;
-      --brown-light: #B2897D;
-      --accent:      #D8A698;
-      --white:       #ffffff;
-      --border:      #E7CEC6;
+      --cream:       #F8E8D7;
+      --cream-dark:  #E8D3BC;
+      --brown-dark:  #3F2417;
+      --brown-mid:   #625347;
+      --brown-light: #9A8070;
+      --accent:      #C0A28D;
+      --white:       #FFF8F0;
+      --border:      #DCC5AE;
       --red:         #b94040;
       --red-pale:    #fdf0f0;
       --green:       #4a7c59;
       --green-pale:  #edf7f0;
       --gold:        #c9882a;
       --gold-pale:   #fdf5e6;
-      --shadow:      0 2px 16px rgba(46,29,27,0.08);
-      --shadow-lg:   0 8px 40px rgba(46,29,27,0.14);
+      --shadow:      0 2px 16px rgba(63,36,23,0.08);
+      --shadow-lg:   0 8px 40px rgba(63,36,23,0.14);
     }
 
     html { -webkit-text-size-adjust: 100%; }
@@ -246,6 +246,55 @@
     .no-progress { text-align: center; padding: 24px 0; color: var(--brown-light); font-size: 0.85rem; font-style: italic; }
 
     .week-info { font-size: 0.72rem; color: var(--brown-light); margin-top: 4px; }
+  /* ══ CHAT COMUNIDAD ADMIN ══ */
+  .admin-chat-msg {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 10px 0; border-bottom: 1px solid var(--cream-dark);
+  }
+  .admin-chat-avatar {
+    width: 32px; height: 32px; border-radius: 50%; background: var(--accent);
+    color: #fff; display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem; font-weight: 600; flex-shrink: 0;
+  }
+  .admin-chat-body { flex: 1; min-width: 0; }
+  .admin-chat-meta { font-size: 0.72rem; color: var(--brown-light); margin-bottom: 3px; }
+  .admin-chat-meta strong { color: var(--brown-dark); }
+  .admin-chat-text { font-size: 0.87rem; color: var(--brown-dark); line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+  .admin-chat-photo { max-width: 120px; max-height: 120px; border-radius: 6px; margin-top: 6px; object-fit: contain; display: block; cursor: zoom-in; border: 1px solid var(--border); }
+  .btn-delete-admin-chat {
+    background: none; border: 1px solid var(--border); border-radius: 4px;
+    padding: 2px 8px; font-size: 0.7rem; color: var(--brown-light); cursor: pointer;
+    flex-shrink: 0; transition: color 0.15s, border-color 0.15s;
+  }
+  .btn-delete-admin-chat:hover { color: var(--red); border-color: var(--red); }
+
+  /* ══ COACH FEEDBACK ADMIN ══ */
+  .coach-feedback-admin {
+    margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border);
+  }
+  .coach-feedback-admin-label {
+    font-size: 0.6rem; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--brown-mid); font-weight: 600; margin-bottom: 6px; display: block;
+  }
+  .coach-feedback-textarea {
+    width: 100%; border: 1.5px solid var(--border); border-radius: 5px;
+    padding: 10px 12px; font-family: 'Jost', sans-serif; font-size: 0.87rem;
+    color: var(--brown-dark); background: var(--cream); outline: none;
+    resize: vertical; min-height: 70px; line-height: 1.5; transition: border-color 0.2s;
+    box-sizing: border-box;
+  }
+  .coach-feedback-textarea:focus { border-color: var(--accent); background: var(--white); }
+  .btn-save-feedback {
+    background: var(--brown-dark); color: var(--white); border: none;
+    border-radius: 4px; padding: 7px 16px; font-family: 'Jost', sans-serif;
+    font-size: 0.75rem; font-weight: 500; letter-spacing: 1px; text-transform: uppercase;
+    cursor: pointer; transition: background 0.2s; margin-top: 8px;
+  }
+  .btn-save-feedback:hover { background: var(--brown-mid); }
+  .btn-save-feedback:disabled { opacity: 0.5; cursor: not-allowed; }
+  .feedback-saved-msg { font-size: 0.75rem; color: var(--green); margin-left: 10px; opacity: 0; transition: opacity 0.3s; }
+  .feedback-saved-msg.show { opacity: 1; }
+
   /* ══ VISION ADMIN ══ */
   .vision-admin-block { padding: 16px 18px; }
   .vision-admin-section { margin-bottom: 20px; }
@@ -359,8 +408,8 @@
 
   <!-- Diario Alimentario -->
   <div class="card">
-    <h2>📔 Diario Alimentario</h2>
-    <p style="font-size:0.84rem;color:var(--brown-light);margin-bottom:16px;">Consulta el diario de alimentación de una clienta ingresando su correo.</p>
+    <h2>📔 Sport & Food Journal</h2>
+    <p style="font-size:0.84rem;color:var(--brown-light);margin-bottom:16px;">Consulta el diario de alimentación y deporte de una clienta ingresando su correo.</p>
     <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
       <input type="email" id="diario-email-input" placeholder="correo@cliente.com"
         style="flex:1;min-width:200px;padding:10px 12px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:0.9rem;"
@@ -368,6 +417,18 @@
       <button class="btn-save" style="width:auto;" onclick="loadClientJournal()">Ver diario</button>
     </div>
     <div id="diario-admin-container"></div>
+  </div>
+
+  <!-- Comunidad -->
+  <div class="card">
+    <h2>
+      💬 Comunidad
+      <button class="refresh-btn" onclick="loadAdminComunidad()">↻ Actualizar</button>
+    </h2>
+    <p style="font-size:0.84rem;color:var(--brown-light);margin-bottom:16px;">Mensajes del chat grupal. Puedes eliminar cualquier mensaje inapropiado.</p>
+    <div id="comunidad-admin-container">
+      <p class="clients-loading">Haz clic en Actualizar para cargar mensajes.</p>
+    </div>
   </div>
 
   <!-- Lista de clientes -->
@@ -858,7 +919,7 @@ function renderClientItem(client, container) {
         <button class="client-tab active"  onclick="switchTab('${sid}','habits',this)">📋 Hábitos</button>
         <button class="client-tab"         onclick="switchTab('${sid}','progress',this)">📊 Progreso</button>
         <button class="client-tab"         onclick="switchTab('${sid}','retos',this)">🎯 Retos <span style="font-size:0.7rem;opacity:0.7">${retosHechos}/${currentRetosConfig.length}</span></button>
-        <button class="client-tab"         onclick="switchTab('${sid}','diario',this)">📔 Diario</button>
+        <button class="client-tab"         onclick="switchTab('${sid}','diario',this)">📔 Sport & Food</button>
         <button class="client-tab"         onclick="switchTab('${sid}','vision',this)">🌱 Visión</button>
       </div>
 
@@ -1290,6 +1351,15 @@ function renderAdminJournal() {
           </button>`).join('')}
       </div>
     </div>
+    <div class="coach-feedback-admin" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
+      <span class="coach-feedback-admin-label">💬 Tu feedback para este día</span>
+      <textarea class="coach-feedback-textarea" id="sa-feedback-ta" rows="3"
+        placeholder="Escribe tu feedback o consejo para esta clienta sobre este día...">${((adminJournalData.coachFeedback||{})[adminJournalDate]||'').replace(/</g,'&lt;')}</textarea>
+      <div style="display:flex;align-items:center;">
+        <button class="btn-save-feedback" onclick="saveAdminStandaloneFeedback(this)">Guardar feedback</button>
+        <span class="feedback-saved-msg" id="sa-feedback-saved">✓ Guardado</span>
+      </div>
+    </div>
   `;
 }
 
@@ -1419,6 +1489,25 @@ function renderClientDiarioForDate(sid, docId, dateStr) {
       </div>`
     : '<p style="font-style:italic;color:var(--brown-light);font-size:0.82rem;">Sin entradas en el diario todavía.</p>';
 
+  // Feedback del coach
+  const existingFeedback = ((data.coachFeedback || {})[dateStr] || '').trim();
+  const feedbackBlockId  = 'cfb-' + sid + '-' + dateStr.replace(/-/g,'');
+  const savedMsgId       = 'cfs-' + sid + '-' + dateStr.replace(/-/g,'');
+
+  const feedbackHTML = `
+    <div class="coach-feedback-admin">
+      <span class="coach-feedback-admin-label">💬 Tu feedback para este día</span>
+      <textarea class="coach-feedback-textarea" id="${feedbackBlockId}" rows="3"
+        placeholder="Escribe tu feedback o consejo para esta clienta sobre este día...">${existingFeedback.replace(/</g,'&lt;')}</textarea>
+      <div style="display:flex;align-items:center;">
+        <button class="btn-save-feedback" id="btn-${feedbackBlockId}"
+          onclick="saveCoachFeedback('${docId}','${dateStr}','${feedbackBlockId}','${savedMsgId}',this)">
+          Guardar feedback
+        </button>
+        <span class="feedback-saved-msg" id="${savedMsgId}">✓ Guardado</span>
+      </div>
+    </div>`;
+
   pane.innerHTML = `
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
       <button class="week-nav-btn" onclick="changeClientDiarioDay('${sid}','${docId}',-1)">←</button>
@@ -1428,6 +1517,7 @@ function renderClientDiarioForDate(sid, docId, dateStr) {
     </div>
     ${entriesHTML}
     ${daysChips}
+    ${feedbackHTML}
   `;
 }
 
@@ -1438,6 +1528,116 @@ function changeClientDiarioDay(sid, docId, delta) {
   const next = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
   if (next > adminTodayISO()) return;
   renderClientDiarioForDate(sid, docId, next);
+}
+
+/* ══════════════════════════════════════
+   FEEDBACK DEL COACH
+   ══════════════════════════════════════ */
+async function saveCoachFeedback(docId, dateStr, textareaId, savedMsgId, btn) {
+  const textarea = document.getElementById(textareaId);
+  if (!textarea) return;
+  const text = textarea.value.trim();
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  try {
+    await db.collection('diario').doc(docId).set(
+      { coachFeedback: { [dateStr]: text } },
+      { merge: true }
+    );
+    // Actualizar cache local
+    if (clientJournalCache[docId]) {
+      if (!clientJournalCache[docId].coachFeedback) clientJournalCache[docId].coachFeedback = {};
+      clientJournalCache[docId].coachFeedback[dateStr] = text;
+    }
+    const savedEl = document.getElementById(savedMsgId);
+    if (savedEl) {
+      savedEl.classList.add('show');
+      setTimeout(() => savedEl.classList.remove('show'), 2200);
+    }
+  } catch (e) {
+    alert('Error al guardar: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Guardar feedback';
+  }
+}
+
+async function saveAdminStandaloneFeedback(btn) {
+  if (!adminJournalEmail) return;
+  const textarea = document.getElementById('sa-feedback-ta');
+  if (!textarea) return;
+  const text  = textarea.value.trim();
+  const docId = adminEmailToDocId(adminJournalEmail);
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  try {
+    await db.collection('diario').doc(docId).set(
+      { coachFeedback: { [adminJournalDate]: text } },
+      { merge: true }
+    );
+    if (!adminJournalData.coachFeedback) adminJournalData.coachFeedback = {};
+    adminJournalData.coachFeedback[adminJournalDate] = text;
+    const savedEl = document.getElementById('sa-feedback-saved');
+    if (savedEl) { savedEl.classList.add('show'); setTimeout(() => savedEl.classList.remove('show'), 2200); }
+  } catch (e) {
+    alert('Error al guardar: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Guardar feedback';
+  }
+}
+
+/* ══════════════════════════════════════
+   COMUNIDAD ADMIN
+   ══════════════════════════════════════ */
+async function loadAdminComunidad() {
+  const container = document.getElementById('comunidad-admin-container');
+  if (!container) return;
+  container.innerHTML = '<p class="clients-loading">Cargando mensajes...</p>';
+  try {
+    const snap = await db.collection('comunidad').orderBy('ts', 'desc').limit(100).get();
+    if (snap.empty) {
+      container.innerHTML = '<p class="client-empty">Todavía no hay mensajes en la comunidad.</p>';
+      return;
+    }
+    const msgs = snap.docs.map(d => d.data());
+    renderAdminComunidad(msgs, container);
+  } catch (e) {
+    container.innerHTML = `<p class="client-empty" style="color:var(--red)">Error: ${e.message}</p>`;
+  }
+}
+
+function renderAdminComunidad(msgs, container) {
+  container.innerHTML = `<p style="font-size:0.78rem;color:var(--brown-light);margin-bottom:12px;">${msgs.length} mensaje${msgs.length!==1?'s':''} (más recientes primero)</p>`;
+  msgs.forEach(m => {
+    const div     = document.createElement('div');
+    div.className = 'admin-chat-msg';
+    const initials = (m.name || m.email || '?').charAt(0).toUpperCase();
+    const d       = new Date(m.ts);
+    const timeStr = d.toLocaleDateString('es-CL', { day:'numeric', month:'short' }) + ' · ' +
+                    d.toLocaleTimeString('es-CL', { hour:'2-digit', minute:'2-digit' });
+    div.innerHTML = `
+      <div class="admin-chat-avatar">${initials}</div>
+      <div class="admin-chat-body">
+        <div class="admin-chat-meta">
+          <strong>${(m.name||'').replace(/</g,'&lt;') || m.email}</strong>
+          &nbsp;·&nbsp; <span style="font-size:0.65rem;">${m.email}</span>
+          &nbsp;·&nbsp; ${timeStr}
+        </div>
+        ${m.text  ? `<div class="admin-chat-text">${m.text.replace(/</g,'&lt;')}</div>` : ''}
+        ${m.photo ? `<img class="admin-chat-photo" src="${m.photo}" onclick="openLightbox(this.src)" loading="lazy">` : ''}
+      </div>
+      <button class="btn-delete-admin-chat" onclick="deleteAdminChatMessage('${m.id}', this)">✕ Borrar</button>`;
+    container.appendChild(div);
+  });
+}
+
+async function deleteAdminChatMessage(id, btn) {
+  if (!confirm('¿Eliminar este mensaje de la comunidad?')) return;
+  btn.disabled = true; btn.textContent = '...';
+  try {
+    await db.collection('comunidad').doc(id).delete();
+    btn.closest('.admin-chat-msg').remove();
+  } catch (e) {
+    btn.disabled = false; btn.textContent = '✕ Borrar';
+    alert('Error: ' + e.message);
+  }
 }
 
 function openLightbox(src) {
