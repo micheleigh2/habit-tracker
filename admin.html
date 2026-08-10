@@ -1560,7 +1560,7 @@ async function saveCoachFeedback(docId, dateStr, textareaId, savedMsgId, btn) {
   }
 }
 
-async async function saveAdminStandaloneFeedback(btn) {
+async function saveAdminStandaloneFeedback(btn) {
   if (!adminJournalEmail) return;
   const textarea = document.getElementById('sa-feedback-ta');
   if (!textarea) return;

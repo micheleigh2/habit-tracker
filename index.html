@@ -1262,7 +1262,7 @@
       <button class="btn-nav" onclick="changeJournalDay(1)">›</button>
     </div>
 
-    <!-- Formulario: siempre visible ARRIBA -->
+    <!-- Formulario -->
     <div class="diario-form" id="diario-form">
       <div class="diario-form-top">
         <span class="diario-form-time" id="diario-form-time">—</span>
@@ -1304,7 +1304,7 @@
       <div id="coach-feedback-content" class="coach-feedback-placeholder">Michelle aún no ha dejado feedback para este día.</div>
     </div>
 
-    <!-- Entradas del día (abajo del formulario) -->
+    <!-- Entradas del día -->
     <div id="diario-entries"></div>
 
   </div>
@@ -1542,6 +1542,7 @@ let viewingJournalDate = todayISO();
 let journalData        = {};
 let journalCoachFeedback = {};
 let journalUnsubscribe = null;
+let journalPollInterval = null;
 let selectedCategoria  = null;
 let selectedMood       = null;
 let pendingPhoto       = null;
@@ -3027,33 +3028,62 @@ async function saveJournalDay(dateStr) {
   } catch {}
 }
 
-async function loadJournal() {
+function stopJournalPolling() {
+  if (journalPollInterval) { clearInterval(journalPollInterval); journalPollInterval = null; }
+  if (journalUnsubscribe)  { journalUnsubscribe(); journalUnsubscribe = null; }
+}
+
+async function fetchJournalDoc() {
   if (!db || !currentUserEmail) return;
-  // Cargar historial una vez (rápido)
   try {
     const snap = await db.collection('diario').doc(emailToDocId(currentUserEmail)).get();
-    if (snap.exists) {
+    if (snap && snap.exists) {
       const data = snap.data() || {};
       journalCoachFeedback = data.coachFeedback || {};
       journalData = {};
-      Object.keys(data).forEach(k => {
+      Object.keys(data).forEach(function(k) {
         if (k !== 'coachFeedback') journalData[k] = data[k];
       });
+    } else {
+      journalCoachFeedback = {};
+      journalData = {};
     }
-  } catch {}
-  renderJournal();
-  // Suscripción en tiempo real solo para coachFeedback
-  if (journalUnsubscribe) { journalUnsubscribe(); journalUnsubscribe = null; }
-  journalUnsubscribe = db.collection('diario').doc(emailToDocId(currentUserEmail))
-    .onSnapshot(snap => {
+    renderJournal();
+  } catch(err) {
+    console.warn('fetchJournalDoc error:', err);
+  }
+}
+
+function loadJournal() {
+  if (!db || !currentUserEmail) return;
+  stopJournalPolling();
+  // Carga inicial inmediata
+  fetchJournalDoc();
+  // Polling cada 10 segundos para captar cambios del admin (feedback del coach)
+  journalPollInterval = setInterval(fetchJournalDoc, 10000);
+  // onSnapshot como canal principal si los permisos lo permiten
+  try {
+    const docRef = db.collection('diario').doc(emailToDocId(currentUserEmail));
+    journalUnsubscribe = docRef.onSnapshot(function(snap) {
       if (snap && snap.exists) {
-        const fb = (snap.data() || {}).coachFeedback || {};
-        if (JSON.stringify(fb) !== JSON.stringify(journalCoachFeedback)) {
-          journalCoachFeedback = fb;
-          renderJournalEntries();
-        }
+        const data = snap.data() || {};
+        journalCoachFeedback = data.coachFeedback || {};
+        journalData = {};
+        Object.keys(data).forEach(function(k) {
+          if (k !== 'coachFeedback') journalData[k] = data[k];
+        });
+      } else {
+        journalCoachFeedback = {};
+        journalData = {};
       }
-    }, () => {});
+      renderJournal();
+    }, function(err) {
+      console.warn('loadJournal onSnapshot error:', err.code, err.message);
+      // No cancela el polling — seguirá actualizando cada 10s
+    });
+  } catch(e) {
+    console.warn('loadJournal onSnapshot setup error:', e);
+  }
 }
 
 /* ══════════ GATE ══════════ */
@@ -3088,6 +3118,7 @@ async function initGate() {
           const user = { name: fbUser.name, email };
           saveUser(user);
           unlockApp(user.name, email, false);
+          activateDiarioTab();
           loadFromCloud(email).then(ok => { if (ok) { render(); renderVision(); } });
           return;
         }
@@ -3103,6 +3134,7 @@ async function initGate() {
   if (localUser && localUser.email) {
     currentUserEmail = localUser.email;
     unlockApp(localUser.name, localUser.email, false);
+    activateDiarioTab();
     loadFromCloud(localUser.email).then(ok => { if (ok) { render(); renderVision(); } });
     saveUserToCloud(localUser);
     return;
@@ -3232,6 +3264,7 @@ async function submitGate() {
       const user = { name: existingUser.name, email: emailVal };
       saveUser(user);
       unlockApp(user.name, user.email, true);
+      activateDiarioTab();
       loadFromCloud(emailVal).then(ok => { if (ok) { render(); renderVision(); } });
       return;
     }
@@ -3250,11 +3283,23 @@ async function submitGate() {
   currentUserEmail = emailVal;
   saveUser(user);
   unlockApp(user.name, user.email, true);
+  activateDiarioTab();
   loadFromCloud(emailVal).then(ok => { if (ok) { render(); renderVision(); } });
   const body = new URLSearchParams();
   body.append(FIELD_NAME, user.name); body.append(FIELD_EMAIL, user.email);
   fetch(FORM_URL, { method: 'POST', mode: 'no-cors', body }).catch(() => {});
 }
+function activateDiarioTab() {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  var dp = document.getElementById('tab-diario');
+  if (dp) dp.classList.add('active');
+  var btns = document.querySelectorAll('.tab-btn');
+  btns.forEach(function(b){ if (b.getAttribute('onclick') && b.getAttribute('onclick').indexOf('diario') > -1) b.classList.add('active'); });
+  viewingJournalDate = todayISO();
+  setTimeout(function(){ initJournalForm(); renderJournalDateLabel(); loadJournal(); }, 100);
+}
+
 function unlockApp(name, email, animate) {
   const gate = document.getElementById('gate');
   if (animate) { gate.style.opacity = '0'; setTimeout(() => gate.classList.add('hidden'), 500); }
@@ -3269,16 +3314,6 @@ function unlockApp(name, email, animate) {
   } catch {}
   // Cargar retos
   loadRetos();
-  // Activar tab diario como pestaña por defecto
-  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  const diarioPane = document.getElementById('tab-diario');
-  const diarioBtn  = document.querySelector(".tab-btn[onclick*="'diario'"]");
-  if (diarioPane) diarioPane.classList.add('active');
-  if (diarioBtn)  diarioBtn.classList.add('active');
-  // Inicializar journal
-  viewingJournalDate = todayISO();
-  setTimeout(() => { initJournalForm(); renderJournalDateLabel(); loadJournal(); }, 150);
   // Cargar ranking global
   setTimeout(() => fetchGlobalRanking(), 1200);
 }
@@ -3291,6 +3326,7 @@ function switchTab(id, btn) {
   btn.classList.add('active');
   if (id === 'ranking') fetchGlobalRanking();
   if (id === 'diario')  { viewingJournalDate = todayISO(); initJournalForm(); renderJournalDateLabel(); loadJournal(); }
+  else { stopJournalPolling(); }
   if (id === 'vision')    renderVision();
   if (id === 'comunidad') initComunidad();
 }
