@@ -829,20 +829,21 @@
 
     /* Feedback del coach */
     .coach-feedback-block {
-      background: #EDE0D4; border-radius: 8px;
-      padding: 12px 16px; margin: 4px 0 12px;
+      background: #fff; border-radius: 8px;
+      padding: 12px 16px; margin: 8px 0 12px;
       border-left: 5px solid var(--accent);
+      box-shadow: 0 1px 6px rgba(63,36,23,0.13);
     }
     .coach-feedback-label {
       font-size: 0.62rem; text-transform: uppercase; letter-spacing: 1.2px;
-      color: var(--brown-mid); font-weight: 700; margin-bottom: 6px; display: block;
+      color: var(--accent-dark); font-weight: 700; margin-bottom: 6px; display: block;
     }
     .coach-feedback-text {
       font-size: 0.87rem; color: var(--brown-dark); line-height: 1.6;
       white-space: pre-wrap; word-break: break-word;
     }
-    .coach-feedback-empty { border-left-color: var(--accent); }
-    .coach-feedback-empty .coach-feedback-label { color: var(--brown-mid); }
+    .coach-feedback-empty { border-left-color: #C0A28D; }
+    .coach-feedback-empty .coach-feedback-label { color: var(--brown-light); }
     .coach-feedback-placeholder {
       font-size: 0.82rem; color: var(--brown-light); font-style: italic;
     }
@@ -3026,22 +3027,33 @@ async function saveJournalDay(dateStr) {
   } catch {}
 }
 
-function loadJournal() {
+async function loadJournal() {
   if (!db || !currentUserEmail) return;
-  // Cancelar suscripción previa si existe
+  // Cargar historial una vez (rápido)
+  try {
+    const snap = await db.collection('diario').doc(emailToDocId(currentUserEmail)).get();
+    if (snap.exists) {
+      const data = snap.data() || {};
+      journalCoachFeedback = data.coachFeedback || {};
+      journalData = {};
+      Object.keys(data).forEach(k => {
+        if (k !== 'coachFeedback') journalData[k] = data[k];
+      });
+    }
+  } catch {}
+  renderJournal();
+  // Suscripción en tiempo real solo para coachFeedback
   if (journalUnsubscribe) { journalUnsubscribe(); journalUnsubscribe = null; }
   journalUnsubscribe = db.collection('diario').doc(emailToDocId(currentUserEmail))
     .onSnapshot(snap => {
-      if (snap.exists) {
-        const data = snap.data() || {};
-        journalCoachFeedback = data.coachFeedback || {};
-        journalData = {};
-        Object.keys(data).forEach(k => {
-          if (k !== 'coachFeedback') journalData[k] = data[k];
-        });
+      if (snap && snap.exists) {
+        const fb = (snap.data() || {}).coachFeedback || {};
+        if (JSON.stringify(fb) !== JSON.stringify(journalCoachFeedback)) {
+          journalCoachFeedback = fb;
+          renderJournalEntries();
+        }
       }
-      renderJournal();
-    }, () => { renderJournal(); });
+    }, () => {});
 }
 
 /* ══════════ GATE ══════════ */
@@ -3257,10 +3269,17 @@ function unlockApp(name, email, animate) {
   } catch {}
   // Cargar retos
   loadRetos();
-  // Inicializar journal (tab por defecto)
+  // Activar tab diario como pestaña por defecto
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  const diarioPane = document.getElementById('tab-diario');
+  const diarioBtn  = document.querySelector(".tab-btn[onclick*="'diario'"]");
+  if (diarioPane) diarioPane.classList.add('active');
+  if (diarioBtn)  diarioBtn.classList.add('active');
+  // Inicializar journal
   viewingJournalDate = todayISO();
-  setTimeout(() => { initJournalForm(); renderJournalDateLabel(); loadJournal(); }, 100);
-  // Cargar ranking global (con pequeño delay para no bloquear la entrada)
+  setTimeout(() => { initJournalForm(); renderJournalDateLabel(); loadJournal(); }, 150);
+  // Cargar ranking global
   setTimeout(() => fetchGlobalRanking(), 1200);
 }
 
