@@ -1490,7 +1490,8 @@ function initFirebase() {
 function saveToCloud() {
   if (!db || !currentUserEmail) return;
   const score = calculateScore();
-  db.collection('habitos').doc(emailToDocId(currentUserEmail)).set({ ...state, score }).catch(() => {});
+  const extra = currentUserName ? { userName: currentUserName } : {};
+  db.collection('habitos').doc(emailToDocId(currentUserEmail)).set({ ...state, score, ...extra }).catch(() => {});
 }
 async function loadFromCloud(email) {
   if (!db || !email) return false;
@@ -1539,6 +1540,7 @@ let viewingWeek = getMonday();
 let viewingJournalDate = todayISO();
 let journalData        = {};
 let journalCoachFeedback = {};
+let journalUnsubscribe = null;
 let selectedCategoria  = null;
 let selectedMood       = null;
 let pendingPhoto       = null;
@@ -3024,21 +3026,22 @@ async function saveJournalDay(dateStr) {
   } catch {}
 }
 
-async function loadJournal() {
+function loadJournal() {
   if (!db || !currentUserEmail) return;
-  try {
-    const snap = await db.collection('diario').doc(emailToDocId(currentUserEmail)).get();
-    if (snap.exists) {
-      const data = snap.data() || {};
-      journalCoachFeedback = data.coachFeedback || {};
-      // Solo guardar entradas (claves de fecha), no el objeto coachFeedback
-      journalData = {};
-      Object.keys(data).forEach(k => {
-        if (k !== 'coachFeedback') journalData[k] = data[k];
-      });
-    }
-  } catch {}
-  renderJournal();
+  // Cancelar suscripción previa si existe
+  if (journalUnsubscribe) { journalUnsubscribe(); journalUnsubscribe = null; }
+  journalUnsubscribe = db.collection('diario').doc(emailToDocId(currentUserEmail))
+    .onSnapshot(snap => {
+      if (snap.exists) {
+        const data = snap.data() || {};
+        journalCoachFeedback = data.coachFeedback || {};
+        journalData = {};
+        Object.keys(data).forEach(k => {
+          if (k !== 'coachFeedback') journalData[k] = data[k];
+        });
+      }
+      renderJournal();
+    }, () => { renderJournal(); });
 }
 
 /* ══════════ GATE ══════════ */
@@ -3058,7 +3061,17 @@ async function initGate() {
       const email = decodeURIComponent(urlEmail).toLowerCase().trim();
       if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         currentUserEmail = email;
-        const fbUser = await loadUserFromCloud(email);
+        // 1. Buscar en usuarios (nombre guardado)
+        let fbUser = await loadUserFromCloud(email);
+        // 2. Fallback: buscar nombre en habitos
+        if (!fbUser?.name && db) {
+          try {
+            const hSnap = await db.collection('habitos').doc(emailToDocId(email)).get();
+            if (hSnap.exists && hSnap.data()?.userName) {
+              fbUser = { name: hSnap.data().userName, email };
+            }
+          } catch {}
+        }
         if (fbUser?.name) {
           const user = { name: fbUser.name, email };
           saveUser(user);
@@ -3066,8 +3079,9 @@ async function initGate() {
           loadFromCloud(email).then(ok => { if (ok) { render(); renderVision(); } });
           return;
         }
-        // Firestore sin datos (primera vez) → pre-cargar email y pedir nombre
+        // Pre-cargar email para que solo tenga que apretar Enter
         document.getElementById('gate-email').value = email;
+        // Auto-submit si es usuario existente pero sin nombre guardado en Firestore
       }
     }
   } catch {}
