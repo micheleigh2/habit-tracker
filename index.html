@@ -807,12 +807,12 @@
     .mood-row { margin: 12px 0 10px; }
     /* Categoría */
     .categoria-row { margin-bottom: 10px; }
-    .categoria-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .categoria-chips { display: flex; gap: 5px; flex-wrap: nowrap; }
     .categoria-chip {
-      display: flex; align-items: center; gap: 5px;
+      display: flex; align-items: center; gap: 3px;
       background: var(--cream); border: 1.5px solid var(--border); border-radius: 20px;
-      padding: 5px 12px; font-size: 0.78rem; color: var(--brown-mid);
-      cursor: pointer; font-family: 'Jost', sans-serif;
+      padding: 3px 8px; font-size: 0.7rem; color: var(--brown-mid);
+      cursor: pointer; font-family: 'Jost', sans-serif; white-space: nowrap;
       -webkit-tap-highlight-color: transparent; transition: border-color 0.15s, background 0.15s;
     }
     .categoria-chip.selected { border-color: var(--green); background: var(--white); color: var(--brown-dark); font-weight: 500; }
@@ -849,14 +849,14 @@
 
     .mood-label { font-size: 0.74rem; color: var(--brown-light); text-transform: uppercase;
       letter-spacing: 0.8px; margin-bottom: 8px; display: block; }
-    .mood-options { display: flex; gap: 6px; flex-wrap: wrap; }
+    .mood-options { display: flex; gap: 4px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
     .mood-btn {
       display: flex; flex-direction: column; align-items: center; gap: 2px;
       background: var(--cream); border: 1.5px solid transparent; border-radius: 8px;
-      padding: 7px 10px; cursor: pointer; font-size: 1.3rem; min-width: 52px;
+      padding: 4px 6px; cursor: pointer; font-size: 1.1rem; min-width: 40px; flex-shrink: 0;
       -webkit-tap-highlight-color: transparent; transition: border-color 0.15s, background 0.15s;
     }
-    .mood-btn small { font-size: 0.58rem; color: var(--brown-light); font-family: 'Jost', sans-serif; }
+    .mood-btn small { font-size: 0.52rem; color: var(--brown-light); font-family: 'Jost', sans-serif; }
     .mood-btn.selected { border-color: var(--green); background: var(--white); }
     .mood-btn:active { transform: scale(0.94); }
 
@@ -1032,8 +1032,8 @@
 
   <div class="tabs">
     <button class="tab-btn" onclick="switchTab('vision',this)">🌱 Visión</button>
-    <button class="tab-btn" onclick="switchTab('diario',this)">📔 Sport & Food</button>
-    <button class="tab-btn active" onclick="switchTab('tracker',this)">Mi Tracker</button>
+    <button class="tab-btn active" onclick="switchTab('diario',this)">📔 Sport & Food</button>
+    <button class="tab-btn" onclick="switchTab('tracker',this)">Mi Tracker</button>
     <button class="tab-btn" onclick="switchTab('retos',this)">📋 Retos</button>
     <button class="tab-btn" onclick="switchTab('comunidad',this)" style="display:none">💬 Comunidad</button>
     <button class="tab-btn" onclick="switchTab('ranking',this)">🏅 Mi Ranking</button>
@@ -1065,7 +1065,7 @@
   </div>
 
   <!-- TAB TRACKER -->
-  <div class="tab-pane active" id="tab-tracker">
+  <div class="tab-pane" id="tab-tracker">
 
     <div class="week-bar">
       <button class="btn-nav-sm" onclick="changeWeek(-1)">&#8249;</button>
@@ -1252,7 +1252,7 @@
     </div>
   </div>
 
-  <div class="tab-pane" id="tab-diario">
+  <div class="tab-pane active" id="tab-diario">
 
     <!-- Navegación de fecha -->
     <div class="diario-nav">
@@ -1261,16 +1261,7 @@
       <button class="btn-nav" onclick="changeJournalDay(1)">›</button>
     </div>
 
-    <!-- Entradas del día -->
-    <div id="diario-entries"></div>
-
-    <!-- Feedback del coach: siempre visible -->
-    <div class="coach-feedback-block coach-feedback-empty" id="coach-feedback-block">
-      <span class="coach-feedback-label">💬 Michelle - Feedback del día</span>
-      <div id="coach-feedback-content" class="coach-feedback-placeholder">Michelle aún no ha dejado feedback para este día.</div>
-    </div>
-
-    <!-- Formulario: siempre visible -->
+    <!-- Formulario: siempre visible ARRIBA -->
     <div class="diario-form" id="diario-form">
       <div class="diario-form-top">
         <span class="diario-form-time" id="diario-form-time">—</span>
@@ -1305,6 +1296,15 @@
       </div>
       <button class="btn-add-entry" onclick="addJournalEntry()">+ Guardar entrada</button>
     </div>
+
+    <!-- Feedback del coach -->
+    <div class="coach-feedback-block coach-feedback-empty" id="coach-feedback-block">
+      <span class="coach-feedback-label">💬 Michelle - Feedback del día</span>
+      <div id="coach-feedback-content" class="coach-feedback-placeholder">Michelle aún no ha dejado feedback para este día.</div>
+    </div>
+
+    <!-- Entradas del día (abajo del formulario) -->
+    <div id="diario-entries"></div>
 
   </div>
 
@@ -2985,7 +2985,7 @@ function changeJournalDay(delta) {
 
 async function addJournalEntry() {
   const text = document.getElementById('diario-text').value.trim();
-  if (!text) { showToast('Escribe algo antes de guardar 📝'); return; }
+  if (!text && !pendingPhoto) { showToast('Escribe algo o agrega una foto 📝'); return; }
 
   const now = new Date();
   const hh  = String(now.getHours()).padStart(2,'0');
@@ -3257,6 +3257,9 @@ function unlockApp(name, email, animate) {
   } catch {}
   // Cargar retos
   loadRetos();
+  // Inicializar journal (tab por defecto)
+  viewingJournalDate = todayISO();
+  setTimeout(() => { initJournalForm(); renderJournalDateLabel(); loadJournal(); }, 100);
   // Cargar ranking global (con pequeño delay para no bloquear la entrada)
   setTimeout(() => fetchGlobalRanking(), 1200);
 }
