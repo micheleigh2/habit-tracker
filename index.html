@@ -47,8 +47,8 @@
     /* ══ GATE ══ */
     #gate {
       position: fixed; inset: 0;
-      background: rgba(243,235,233,0.30);
-      backdrop-filter: blur(1px); -webkit-backdrop-filter: blur(1px);
+      background: var(--cream);
+      backdrop-filter: none; -webkit-backdrop-filter: none;
       display: flex; align-items: flex-start; justify-content: center;
       z-index: 1000; padding: 16px; padding-top: 36px;
       transition: opacity 0.5s;
@@ -3254,13 +3254,27 @@ async function submitGate() {
     errEl.style.display = 'block'; return;
   }
 
-  btn.disabled = true; btn.textContent = 'Buscando...';
+  btn.disabled = true; btn.textContent = 'Entrando...';
   currentUserEmail = emailVal;
 
+  // Si hay email + nombre: entrar de inmediato sin esperar Firestore
+  if (nameVal) {
+    const user = { name: nameVal, email: emailVal };
+    saveUser(user);
+    unlockApp(user.name, user.email, true);
+    activateDiarioTab();
+    loadFromCloud(emailVal).then(ok => { if (ok) { render(); renderVision(); } });
+    const body = new URLSearchParams();
+    body.append(FIELD_NAME, user.name); body.append(FIELD_EMAIL, user.email);
+    fetch(FORM_URL, { method: 'POST', mode: 'no-cors', body }).catch(() => {});
+    return;
+  }
+
+  // Solo email sin nombre → buscar si existe en Firestore
+  btn.textContent = 'Buscando...';
   try {
     const existingUser = await loadUserFromCloud(emailVal);
     if (existingUser?.name) {
-      // Usuario conocido → entrar con nombre guardado
       const user = { name: existingUser.name, email: emailVal };
       saveUser(user);
       unlockApp(user.name, user.email, true);
@@ -3270,24 +3284,10 @@ async function submitGate() {
     }
   } catch {}
 
-  // Usuario nuevo — necesita nombre
-  if (!nameVal) {
-    btn.disabled = false; btn.textContent = 'Entrar →';
-    errEl.textContent = '¡Bienvenid@! Es tu primera vez — ingresa también tu nombre.';
-    errEl.style.display = 'block';
-    document.getElementById('gate-name').focus();
-    return;
-  }
-
-  const user = { name: nameVal, email: emailVal };
-  currentUserEmail = emailVal;
-  saveUser(user);
-  unlockApp(user.name, user.email, true);
-  activateDiarioTab();
-  loadFromCloud(emailVal).then(ok => { if (ok) { render(); renderVision(); } });
-  const body = new URLSearchParams();
-  body.append(FIELD_NAME, user.name); body.append(FIELD_EMAIL, user.email);
-  fetch(FORM_URL, { method: 'POST', mode: 'no-cors', body }).catch(() => {});
+  btn.disabled = false; btn.textContent = 'Entrar →';
+  errEl.textContent = '¡Bienvenid@! Es tu primera vez — ingresa también tu nombre.';
+  errEl.style.display = 'block';
+  document.getElementById('gate-name').focus();
 }
 function activateDiarioTab() {
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
@@ -3305,7 +3305,8 @@ function unlockApp(name, email, animate) {
   if (animate) { gate.style.opacity = '0'; setTimeout(() => gate.classList.add('hidden'), 500); }
   else gate.classList.add('hidden');
   currentUserName = name || email || '';
-  document.getElementById('user-greeting').textContent = 'Hola, ' + name.split(' ')[0] + ' 👋';
+  const firstName = (name || email || '').split(' ')[0];
+  document.getElementById('user-greeting').textContent = 'Hola, ' + firstName + ' 👋';
   // Guardar email en la URL → persiste en el historial/bookmarks del browser
   try {
     const u = new URL(window.location.href);
