@@ -393,6 +393,35 @@
     .btn-reset-all:hover { background: var(--red); color: var(--white); }
 
     /* Logros */
+    /* ── Mood week ── */
+    .mood-week-card { background: var(--white); border-radius: 6px; box-shadow: var(--shadow); padding: 18px 16px; margin-bottom: 14px; }
+    .mood-week-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 6px; margin-bottom: 14px; }
+    .mood-day-col { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+    .mood-day-label { font-size: 0.62rem; color: var(--brown-light); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+    .mood-day-label.today { color: var(--brown-dark); font-weight: 700; }
+    .mood-day-box {
+      width: 100%; aspect-ratio: 1; border-radius: 7px;
+      background: var(--cream-dark); cursor: pointer;
+      position: relative; transition: transform 0.12s, box-shadow 0.12s;
+      border: 2.5px solid transparent;
+    }
+    .mood-day-box:hover { transform: scale(1.06); box-shadow: 0 2px 8px rgba(63,36,23,0.15); }
+    .mood-day-box.selected { border-color: var(--brown-mid); }
+    .mood-day-box.sport { border: 3.5px solid #4a7c59; box-shadow: 0 0 0 1.5px #a8d4b8; }
+    .mood-day-sport-dot { font-size: 0.75rem; line-height: 1; margin-top: 2px; }
+    .mood-week-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-bottom: 4px; }
+    .mood-legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.72rem; color: var(--brown-mid); }
+    .mood-legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .mood-week-detail {
+      margin-top: 12px; background: var(--cream); border-radius: 8px;
+      padding: 14px 16px; font-size: 0.84rem; color: var(--brown-dark);
+    }
+    .mood-detail-date { font-weight: 600; margin-bottom: 6px; }
+    .mood-detail-entry { padding: 5px 0; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 8px; }
+    .mood-detail-entry:last-child { border-bottom: none; }
+    .mood-detail-cat { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.8px; color: var(--brown-light); min-width: 50px; padding-top: 1px; }
+    .mood-week-close { float:right; background:none; border:none; cursor:pointer; font-size:0.8rem; color:var(--brown-light); padding:0; }
+
     .logros-card { background: var(--white); border-radius: 6px; box-shadow: var(--shadow); padding: 18px 16px; margin-bottom: 14px; }
     .logros-card h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; font-weight: 500; color: var(--brown-dark); margin-bottom: 14px; }
     .comment-card { background: var(--white); border-radius: 6px; box-shadow: var(--shadow); padding: 16px; margin-bottom: 14px; }
@@ -1285,6 +1314,14 @@
           <button class="mood-btn" data-mood="😐" onclick="selectMood(this,'😐')">😐<small>Normal</small></button>
           <button class="mood-btn" data-mood="😴" onclick="selectMood(this,'😴')">😴<small>Pesada</small></button>
           <button class="mood-btn" data-mood="🤢" onclick="selectMood(this,'🤢')">🤢<small>Mal</small></button>
+          <button class="mood-btn" data-mood="😰" onclick="selectMood(this,'😰')">😰<small>Ansiosa</small></button>
+          <button class="mood-btn" data-mood="🤯" onclick="selectMood(this,'🤯')">🤯<small>Sobre-est.</small></button>
+          <button class="mood-btn mood-btn-custom" data-mood="" onclick="selectMoodCustom(this)">✏️<small>Otra</small></button>
+        </div>
+        <div id="mood-custom-row" style="display:none;margin-top:6px;">
+          <input id="mood-custom-input" type="text" maxlength="30" placeholder="Escribe tu emoción..."
+            style="width:100%;padding:7px 10px;border:1.5px solid var(--green);border-radius:20px;font-size:0.82rem;font-family:inherit;color:var(--brown-dark);background:var(--white);outline:none;"
+            oninput="selectedMood = this.value.trim() || null" />
         </div>
       </div>
       <div class="photo-row">
@@ -1306,6 +1343,14 @@
 
     <!-- Entradas del día -->
     <div id="diario-entries"></div>
+
+    <!-- Resumen emocional últimos 7 días -->
+    <div class="mood-week-card" id="mood-week-card" style="margin-top:16px;">
+      <h3 style="font-size:0.95rem;font-weight:600;color:var(--brown-dark);margin-bottom:14px;">🌈 Últimos 7 días</h3>
+      <div class="mood-week-grid" id="mood-week-grid"></div>
+      <div class="mood-week-legend" id="mood-week-legend"></div>
+      <div class="mood-week-detail" id="mood-week-detail" style="display:none"></div>
+    </div>
 
   </div>
 
@@ -2881,6 +2926,18 @@ function selectMood(btn, mood) {
   document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
   selectedMood = mood;
+  document.getElementById('mood-custom-row').style.display = 'none';
+}
+function selectMoodCustom(btn) {
+  document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedMood = null;
+  const row = document.getElementById('mood-custom-row');
+  const inp = document.getElementById('mood-custom-input');
+  row.style.display = 'block';
+  inp.value = '';
+  inp.focus();
+  inp.oninput = () => { selectedMood = inp.value.trim() || null; };
 }
 
 function initJournalForm() {
@@ -2895,6 +2952,8 @@ function initJournalForm() {
   document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
   document.querySelectorAll('.categoria-chip').forEach(b => b.classList.remove('selected'));
   document.getElementById('diario-photo-preview').style.display = 'none';
+  document.getElementById('mood-custom-row').style.display = 'none';
+  const mci = document.getElementById('mood-custom-input'); if (mci) mci.value = '';
 }
 
 function renderJournalDateLabel() {
@@ -2967,9 +3026,127 @@ function selectCategoria(btn, cat) {
   }
 }
 
+/* ════════════════════════════════════════════════════════
+   RESUMEN EMOCIONAL — ÚLTIMOS 7 DÍAS
+   ════════════════════════════════════════════════════════ */
+const MOOD_COLORS = {
+  '🤩': { bg: '#f5d76e', label: '¡Genial! / Energía' },
+  '😊': { bg: '#e8a87c', label: 'Bien' },
+  '💪': { bg: '#7ec89e', label: 'Energética' },
+  '😐': { bg: '#c4b9ae', label: 'Normal' },
+  '😴': { bg: '#a8bdd0', label: 'Pesada / Sin ánimos' },
+  '🤢': { bg: '#8a7fb5', label: 'Mal / Angustia' },
+  '😰': { bg: '#f0a0a0', label: 'Ansiosa' },
+  '🤯': { bg: '#f0c0e0', label: 'Sobre-estimulada' },
+};
+function getMoodColor(mood) {
+  if (!mood) return null;
+  if (MOOD_COLORS[mood]) return MOOD_COLORS[mood];
+  // Emoción personalizada → color neutro distintivo
+  return { bg: '#d4c5e2', label: mood };
+}
+let moodWeekSelected = null;
+
+function renderMoodWeek() {
+  const grid   = document.getElementById('mood-week-grid');
+  const legend = document.getElementById('mood-week-legend');
+  if (!grid) return;
+
+  const today = todayISO();
+  const days  = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today + 'T12:00:00');
+    d.setDate(d.getDate() - i);
+    days.push(d.toISOString().slice(0, 10));
+  }
+
+  const DAY_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const usedMoods = new Set();
+
+  grid.innerHTML = '';
+  days.forEach(date => {
+    const entries  = journalData[date] || [];
+    const moods    = entries.map(e => e.mood).filter(Boolean);
+    const hasSport = entries.some(e => (e.categoria || '').toLowerCase() === 'deporte');
+    const topMood  = moods[0] || null;
+    const moodInfo = getMoodColor(topMood);
+    if (topMood) usedMoods.add(topMood);
+
+    const d   = new Date(date + 'T12:00:00');
+    const lbl = DAY_SHORT[d.getDay()];
+    const isToday = date === today;
+
+    const col = document.createElement('div');
+    col.className = 'mood-day-col';
+    col.innerHTML = `
+      <div class="mood-day-label${isToday ? ' today' : ''}">${lbl}</div>
+      <div class="mood-day-box${moodWeekSelected === date ? ' selected' : ''}${hasSport ? ' sport' : ''}"
+           style="${moodInfo ? 'background:' + moodInfo.bg + ';' : ''}"
+           onclick="toggleMoodDetail('${date}')">
+      </div>
+      ${hasSport ? '<div class="mood-day-sport-dot">🏃</div>' : '<div class="mood-day-sport-dot" style="opacity:0">·</div>'}`;
+    grid.appendChild(col);
+  });
+
+  // Leyenda con los moods presentes
+  legend.innerHTML = '';
+  usedMoods.forEach(emoji => {
+    const info = getMoodColor(emoji);
+    if (!info) return;
+    const item = document.createElement('div');
+    item.className = 'mood-legend-item';
+    item.innerHTML = `<span class="mood-legend-dot" style="background:${info.bg}"></span>${info.label}`;
+    legend.appendChild(item);
+  });
+  // Siempre mostrar referencia de deporte si hubo
+  const anySport = days.some(d => (journalData[d] || []).some(e => (e.categoria || '').toLowerCase() === 'deporte'));
+  if (anySport) {
+    const s = document.createElement('div');
+    s.className = 'mood-legend-item';
+    s.innerHTML = `<span style="display:inline-block;width:12px;height:12px;border-radius:3px;border:2.5px solid #4a7c59;box-shadow:0 0 0 1px #a8d4b8;flex-shrink:0;"></span> Hizo deporte ese día`;
+    legend.appendChild(s);
+  }
+  // Si no hay entradas aún
+  if (usedMoods.size === 0) {
+    legend.innerHTML = '<span style="font-size:0.78rem;color:var(--brown-light);font-style:italic;">Registra tus comidas y estados de ánimo en Sport & Food para ver el resumen aquí.</span>';
+  }
+}
+
+function toggleMoodDetail(date) {
+  const detail = document.getElementById('mood-week-detail');
+  if (moodWeekSelected === date) {
+    moodWeekSelected = null;
+    detail.style.display = 'none';
+    renderMoodWeek();
+    return;
+  }
+  moodWeekSelected = date;
+  renderMoodWeek();
+
+  const entries  = journalData[date] || [];
+  const d = new Date(date + 'T12:00:00');
+  const dateLabel = d.toLocaleDateString('es-CL', { weekday:'long', day:'numeric', month:'long' });
+  let html = `<div class="mood-detail-date">${dateLabel} <button class="mood-week-close" onclick="toggleMoodDetail('${date}')">Cerrar ×</button></div>`;
+  if (!entries.length) {
+    html += '<em style="color:var(--brown-light);font-size:0.82rem;">No hay entradas para este día.</em>';
+  } else {
+    entries.forEach(e => {
+      const mood = e.mood ? `${e.mood} ` : '';
+      const text = e.text ? e.text.replace(/</g,'&lt;') : '';
+      html += `<div class="mood-detail-entry">
+        <span class="mood-detail-cat">${e.categoria || ''}</span>
+        <span>${mood}${text || '<em style="color:var(--brown-light)">Sin texto</em>'}</span>
+      </div>`;
+    });
+  }
+  detail.innerHTML = html;
+  detail.style.display = 'block';
+}
+
 function renderJournal() {
   renderJournalDateLabel();
   renderJournalEntries();
+  renderMoodWeek();
   // Opacidad del botón de avance (no se puede pasar del día de hoy)
   const today = todayISO();
   const fwdBtn = document.querySelector('#tab-diario .btn-nav:last-child');
@@ -3007,6 +3184,7 @@ async function addJournalEntry() {
   journalData[viewingJournalDate].push(entry);
 
   renderJournalEntries();
+  renderMoodWeek();
   initJournalForm();
   await saveJournalDay(viewingJournalDate);
   showToast('Entrada guardada 🌿');
@@ -3016,6 +3194,7 @@ async function deleteJournalEntry(dateStr, entryId) {
   if (!journalData[dateStr]) return;
   journalData[dateStr] = journalData[dateStr].filter(e => e.id !== entryId);
   renderJournalEntries();
+  renderMoodWeek();
   await saveJournalDay(dateStr);
 }
 
@@ -3093,25 +3272,36 @@ async function initGate() {
 
   const gate    = document.getElementById('gate');
   const gateBox = gate.querySelector('.gate-box');
+
+  /* ── 1. SESIÓN LOCAL (sin red) — cookie o localStorage ─────────────────
+     Si hay datos guardados, entramos INMEDIATAMENTE. No esperamos Firestore.
+     Los datos de Firestore se cargan en segundo plano después del unlock.
+  ──────────────────────────────────────────────────────────────────────── */
+  const fastUser = getUser();   // sincrónico: cookie → localStorage
+  if (fastUser?.name && fastUser?.email) {
+    currentUserEmail = fastUser.email;
+    gate.classList.add('hidden');   // ocultar gate al instante
+    unlockApp(fastUser.name, fastUser.email, false);
+    activateDiarioTab();
+    loadFromCloud(fastUser.email).then(ok => { if (ok) { render(); renderVision(); } });
+    saveUserToCloud(fastUser);
+    return;
+  }
+
+  /* ── 2. URL param ?u= (enlaces compartidos / marcadores) ─────────────── */
   gateBox.style.opacity = '0';
   gateBox.style.pointerEvents = 'none';
-
-  // 1. Verificar URL param ?u= (persistencia cross-device y cross-browser)
   try {
     const urlEmail = new URLSearchParams(window.location.search).get('u');
     if (urlEmail) {
       const email = decodeURIComponent(urlEmail).toLowerCase().trim();
       if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         currentUserEmail = email;
-        // 1. Buscar en usuarios (nombre guardado)
         let fbUser = await loadUserFromCloud(email);
-        // 2. Fallback: buscar nombre en habitos
         if (!fbUser?.name && db) {
           try {
             const hSnap = await db.collection('habitos').doc(emailToDocId(email)).get();
-            if (hSnap.exists && hSnap.data()?.userName) {
-              fbUser = { name: hSnap.data().userName, email };
-            }
+            if (hSnap.exists && hSnap.data()?.userName) fbUser = { name: hSnap.data().userName, email };
           } catch {}
         }
         if (fbUser?.name) {
@@ -3122,25 +3312,26 @@ async function initGate() {
           loadFromCloud(email).then(ok => { if (ok) { render(); renderVision(); } });
           return;
         }
-        // Pre-cargar email para que solo tenga que apretar Enter
         document.getElementById('gate-email').value = email;
-        // Auto-submit si es usuario existente pero sin nombre guardado en Firestore
       }
     }
   } catch {}
 
-  // 2. Buscar usuario en capas locales (cookie → localStorage → IndexedDB)
-  const localUser = await getUserAsync();
-  if (localUser && localUser.email) {
-    currentUserEmail = localUser.email;
-    unlockApp(localUser.name, localUser.email, false);
-    activateDiarioTab();
-    loadFromCloud(localUser.email).then(ok => { if (ok) { render(); renderVision(); } });
-    saveUserToCloud(localUser);
-    return;
-  }
+  /* ── 3. IndexedDB (async, puede tener datos cuando cookie/LS están vacíos) */
+  try {
+    const idbUser = await idbGet(USER_KEY);
+    if (idbUser?.name && idbUser?.email) {
+      saveUser(idbUser);   // restaurar a capas más rápidas
+      currentUserEmail = idbUser.email;
+      gate.classList.add('hidden');
+      unlockApp(idbUser.name, idbUser.email, false);
+      activateDiarioTab();
+      loadFromCloud(idbUser.email).then(ok => { if (ok) { render(); renderVision(); } });
+      return;
+    }
+  } catch {}
 
-  // 3. No hay sesión → mostrar paso 1 (solo email)
+  /* ── 4. Sin sesión → mostrar formulario ─────────────────────────────── */
   const spinner = document.getElementById('gate-spinner');
   if (spinner) spinner.style.display = 'none';
   gateBox.style.transition    = 'opacity 0.4s';
