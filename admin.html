@@ -321,12 +321,12 @@
     <p class="sub">Revolución Saludable · Seguimiento de clientes</p>
   </div>
 
-  <!-- Diario Alimentario -->
+  <!-- Vista rápida por clienta -->
   <div class="card">
-    <h2>📔 Sport & Food Journal</h2>
-    <p style="font-size:0.84rem;color:var(--brown-light);margin-bottom:16px;">Selecciona una clienta para ver su diario. Marca con ⭐ las que están activas contigo.</p>
+    <h2>👤 Vista rápida por clienta</h2>
+    <p style="font-size:0.84rem;color:var(--brown-light);margin-bottom:16px;">Selecciona una clienta para ver su diario, visión y tracker. Marca con ⭐ las que están activas contigo.</p>
     <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;">
-      <select id="diario-email-input" onchange="if(this.value){loadClientJournal();updateFavBtn();}else{updateFavBtn();}"
+      <select id="diario-email-input" onchange="onQuickClientChange()"
         style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:0.9rem;background:var(--white);color:var(--brown-dark);cursor:pointer;">
         <option value="">— Selecciona una clienta —</option>
       </select>
@@ -334,7 +334,23 @@
         title="Marcar como favorita"
         style="flex-shrink:0;padding:9px 13px;border:1.5px solid var(--border);border-radius:4px;background:var(--white);font-size:1.1rem;cursor:pointer;transition:background 0.15s;">⭐</button>
     </div>
-    <div id="diario-admin-container"></div>
+    <!-- Tabs -->
+    <div class="client-tabs" style="margin-bottom:0;border-radius:6px 6px 0 0;overflow:hidden;">
+      <button class="client-tab active" id="qtab-btn-diario" onclick="switchQuickTab('diario',this)">📔 Diario</button>
+      <button class="client-tab" id="qtab-btn-vision" onclick="switchQuickTab('vision',this)">🌱 Visión</button>
+      <button class="client-tab" id="qtab-btn-tracker" onclick="switchQuickTab('tracker',this)">📊 Tracker</button>
+    </div>
+    <div style="border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px;padding:16px 0 4px;">
+      <div id="quick-tab-diario" class="quick-tab-pane" style="padding:0 2px;">
+        <div id="diario-admin-container"></div>
+      </div>
+      <div id="quick-tab-vision" class="quick-tab-pane" style="display:none;padding:0 2px;">
+        <div id="vision-admin-container"><p style="font-size:0.84rem;color:var(--brown-light);font-style:italic;padding:16px 16px 12px;">Selecciona una clienta para ver su visión.</p></div>
+      </div>
+      <div id="quick-tab-tracker" class="quick-tab-pane" style="display:none;padding:0 2px;">
+        <div id="tracker-admin-container"><p style="font-size:0.84rem;color:var(--brown-light);font-style:italic;padding:16px 16px 12px;">Selecciona una clienta para ver su tracker.</p></div>
+      </div>
+    </div>
   </div>
 
   <!-- Formulario de precarga -->
@@ -1739,6 +1755,175 @@ async function renderClientVision(sid, docId) {
     </div>
 
   </div>`;
+}
+
+/* ══════════════════════════════════════
+   VISTA RÁPIDA — TAB SWITCHER
+   ══════════════════════════════════════ */
+let _quickActiveTab = 'diario';
+
+function switchQuickTab(name, btn) {
+  _quickActiveTab = name;
+  document.querySelectorAll('.quick-tab-pane').forEach(p => p.style.display = 'none');
+  document.getElementById('quick-tab-' + name).style.display = 'block';
+  document.querySelectorAll('[id^="qtab-btn-"]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const email = (document.getElementById('diario-email-input').value || '').trim().toLowerCase();
+  if (!email) return;
+  if (name === 'diario') loadClientJournal();
+  if (name === 'vision') loadAdminVision(email);
+  if (name === 'tracker') loadAdminTracker(email);
+}
+
+function onQuickClientChange() {
+  updateFavBtn();
+  const email = (document.getElementById('diario-email-input').value || '').trim().toLowerCase();
+  // Reset containers to loading state
+  document.getElementById('diario-admin-container').innerHTML  = '';
+  document.getElementById('vision-admin-container').innerHTML  = '<p style="font-size:0.84rem;color:var(--brown-light);font-style:italic;padding:16px 16px 12px;">Cargando...</p>';
+  document.getElementById('tracker-admin-container').innerHTML = '<p style="font-size:0.84rem;color:var(--brown-light);font-style:italic;padding:16px 16px 12px;">Cargando...</p>';
+  if (!email) return;
+  if (_quickActiveTab === 'diario') loadClientJournal();
+  if (_quickActiveTab === 'vision') loadAdminVision(email);
+  if (_quickActiveTab === 'tracker') loadAdminTracker(email);
+}
+
+/* ══════════════════════════════════════
+   VISTA RÁPIDA — VISIÓN
+   ══════════════════════════════════════ */
+async function loadAdminVision(email) {
+  const container = document.getElementById('vision-admin-container');
+  container.innerHTML = '<p style="font-size:0.84rem;color:var(--brown-light);padding:16px 16px 12px;">Cargando visión...</p>';
+  try {
+    const snap = await db.collection('habitos').doc(adminEmailToDocId(email)).get();
+    const vision = snap.exists ? (snap.data().vision || null) : null;
+    renderAdminVision(vision, container);
+  } catch (e) {
+    container.innerHTML = `<p style="color:var(--red);font-size:0.84rem;padding:16px;">${e.message}</p>`;
+  }
+}
+
+function renderAdminVision(vision, container) {
+  if (!vision || (!vision.futuro && (!vision.metas || vision.metas.every(m => !m.texto)) && !vision.mejoras)) {
+    container.innerHTML = '<p style="font-size:0.84rem;color:var(--brown-light);font-style:italic;padding:16px 16px 12px;">Esta clienta aún no ha completado su sección de Visión.</p>';
+    return;
+  }
+  const metasHTML = (vision.metas || []).filter(m => m.texto).map((m, i) => {
+    const fechaFmt = m.fecha
+      ? new Date(m.fecha + 'T12:00:00').toLocaleDateString('es-CL', { day:'numeric', month:'long', year:'numeric' })
+      : '';
+    return `<div class="vision-admin-meta">
+      <span class="vision-admin-meta-num">${i + 1}</span>
+      <div class="vision-admin-meta-body">
+        <div class="vision-admin-meta-texto">${m.texto.replace(/</g,'&lt;')}</div>
+        ${fechaFmt ? `<div class="vision-admin-meta-fecha">📅 <span>${fechaFmt}</span></div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  container.innerHTML = `<div class="vision-admin-block">
+    <div class="vision-admin-section">
+      <span class="vision-admin-label">¿Dónde te gustaría estar en 3 años más?</span>
+      ${vision.futuro
+        ? `<div class="vision-admin-text">${vision.futuro.replace(/</g,'&lt;')}</div>`
+        : `<p class="vision-admin-empty">Sin completar.</p>`}
+    </div>
+    <div class="vision-admin-section">
+      <span class="vision-admin-label">Mis metas para llegar ahí</span>
+      <div class="vision-admin-metas">
+        ${metasHTML || `<p class="vision-admin-empty">Sin metas definidas.</p>`}
+      </div>
+    </div>
+    <div class="vision-admin-section" style="margin-bottom:0">
+      <span class="vision-admin-label">¿Qué mejoras traerá alcanzar estas metas?</span>
+      ${vision.mejoras
+        ? `<div class="vision-admin-text">${vision.mejoras.replace(/</g,'&lt;')}</div>`
+        : `<p class="vision-admin-empty">Sin completar.</p>`}
+    </div>
+  </div>`;
+}
+
+/* ══════════════════════════════════════
+   VISTA RÁPIDA — TRACKER
+   ══════════════════════════════════════ */
+let adminTrackerEmail = '';
+let adminTrackerData  = {};   // { habits, weeks, stats }
+let adminTrackerWeek  = '';
+
+async function loadAdminTracker(email) {
+  const container = document.getElementById('tracker-admin-container');
+  container.innerHTML = '<p style="font-size:0.84rem;color:var(--brown-light);padding:16px 16px 12px;">Cargando tracker...</p>';
+  adminTrackerEmail = email;
+  adminTrackerWeek  = getMonday(new Date());
+  try {
+    const snap = await db.collection('habitos').doc(adminEmailToDocId(email)).get();
+    if (!snap.exists || !snap.data().habits?.length) {
+      container.innerHTML = '<p style="font-size:0.84rem;color:var(--brown-light);font-style:italic;padding:16px 16px 12px;">Esta clienta aún no tiene hábitos en su tracker.</p>';
+      return;
+    }
+    const d = snap.data();
+    adminTrackerData = { habits: d.habits || [], weeks: d.weeks || {}, stats: d.stats || {} };
+    // Auto-saltar a semana más reciente con actividad
+    const hasActivity = w => w && Object.keys(w).some(k => k !== '__comment');
+    if (!hasActivity(adminTrackerData.weeks[adminTrackerWeek])) {
+      const weeksWithData = Object.keys(adminTrackerData.weeks).filter(k => hasActivity(adminTrackerData.weeks[k])).sort();
+      if (weeksWithData.length) adminTrackerWeek = weeksWithData[weeksWithData.length - 1];
+    }
+    renderAdminTracker();
+  } catch (e) {
+    container.innerHTML = `<p style="color:var(--red);font-size:0.84rem;padding:16px;">${e.message}</p>`;
+  }
+}
+
+function renderAdminTracker() {
+  const container = document.getElementById('tracker-admin-container');
+  const client    = { docId: adminEmailToDocId(adminTrackerEmail), ...adminTrackerData };
+  const progressHTML = renderProgressHTML(client, adminTrackerWeek);
+
+  // Listado de hábitos
+  const habits = adminTrackerData.habits || [];
+  const activeHabits = habits.filter(h => {
+    const desde = h.addedWeek || '2000-01-01';
+    if (desde > adminTrackerWeek) return false;
+    if (h.deletedWeek && h.deletedWeek <= adminTrackerWeek) return false;
+    return true;
+  });
+
+  container.innerHTML = `
+    <div style="padding:14px 16px 8px;">
+      <p style="font-size:0.78rem;color:var(--brown-light);margin-bottom:10px;">
+        ${habits.length} hábito${habits.length !== 1 ? 's' : ''} en total · ${activeHabits.length} activos esta semana
+      </p>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px;">
+        ${habits.map(h => {
+          const isHidden = !!h.deletedWeek;
+          return `<span style="display:inline-flex;align-items:center;gap:6px;background:${isHidden ? 'var(--cream-dark)' : 'var(--cream)'};
+            border:1px solid var(--border);border-radius:20px;padding:3px 12px;font-size:0.8rem;
+            color:${isHidden ? 'var(--brown-light)' : 'var(--brown-dark)'};opacity:${isHidden ? '0.6' : '1'};">
+            ${h.name.replace(/</g,'&lt;')}
+            ${h.addedWeek ? `<span style="font-size:0.65rem;color:var(--brown-light);">· desde ${formatWeekShort(h.addedWeek)}</span>` : ''}
+            ${isHidden ? `<span style="font-size:0.65rem;color:var(--red);">· oculto</span>` : ''}
+          </span>`;
+        }).join('')}
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:14px;">
+        ${progressHTML}
+      </div>
+    </div>
+  `;
+
+  // Reemplazar los botones changeWeek del renderProgressHTML con funciones admin
+  // Los botones ya llaman changeWeek(docId, days), pero eso usa clientViewWeek que no aplica aquí.
+  // Redirigir los onclick a adminChangeTrackerWeek:
+  container.querySelectorAll('.week-nav-btn').forEach((btn, i) => {
+    const delta = i === 0 ? -7 : 7;
+    btn.onclick = () => adminChangeTrackerWeek(delta);
+  });
+}
+
+function adminChangeTrackerWeek(days) {
+  adminTrackerWeek = addDays(adminTrackerWeek, days);
+  renderAdminTracker();
 }
 
 /* ══ ARRANQUE ══ */
