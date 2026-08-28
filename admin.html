@@ -38,41 +38,6 @@
       min-height: 100vh;
     }
 
-    /* ══ PASSWORD GATE ══ */
-    #pwd-gate {
-      position: fixed; inset: 0; background: var(--cream);
-      display: flex; align-items: center; justify-content: center;
-      z-index: 100; padding: 24px;
-    }
-    #pwd-gate.hidden { display: none; }
-    .pwd-box {
-      background: var(--white); border-radius: 8px;
-      padding: 36px 40px 32px; max-width: 380px; width: 100%;
-      box-shadow: var(--shadow-lg); text-align: center;
-    }
-    .pwd-leaf { font-size: 1.6rem; margin-bottom: 8px; }
-    .pwd-box h1 {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 1.6rem; font-weight: 500; color: var(--brown-dark); margin-bottom: 4px;
-    }
-    .pwd-brand { font-size: 0.65rem; letter-spacing: 2.5px; text-transform: uppercase; color: var(--brown-light); margin-bottom: 24px; }
-    .pwd-label { display: block; text-align: left; font-size: 0.65rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--brown-mid); margin-bottom: 6px; }
-    .pwd-input {
-      width: 100%; border: 1px solid var(--border); border-radius: 4px;
-      padding: 10px 14px; font-family: 'Jost', sans-serif; font-size: 0.95rem;
-      color: var(--brown-dark); background: var(--cream); outline: none;
-      transition: border-color 0.2s; -webkit-appearance: none; margin-bottom: 12px;
-    }
-    .pwd-input:focus { border-color: var(--accent); background: var(--white); }
-    .pwd-error { font-size: 0.75rem; color: var(--red); margin-bottom: 10px; display: none; }
-    .btn-primary {
-      width: 100%; background: var(--brown-dark); color: var(--white);
-      border: none; border-radius: 4px; padding: 11px;
-      font-family: 'Jost', sans-serif; font-size: 0.8rem;
-      font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase;
-      cursor: pointer; transition: background 0.2s;
-    }
-    .btn-primary:hover { background: var(--brown-mid); }
 
     /* ══ LAYOUT ══ */
     #admin { display: none; max-width: 900px; margin: 0 auto; padding: 36px 20px 80px; }
@@ -349,23 +314,27 @@
 <body>
 
 <!-- ══ PASSWORD GATE ══ -->
-<div id="pwd-gate">
-  <div class="pwd-box">
-    <div class="pwd-leaf">🌿</div>
-    <h1>Panel de Admin</h1>
-    <p class="pwd-brand">Revolución Saludable</p>
-    <label class="pwd-label" for="pwd-input">Contraseña</label>
-    <input type="password" id="pwd-input" class="pwd-input" placeholder="••••••••" autocomplete="current-password" />
-    <div class="pwd-error" id="pwd-error">Contraseña incorrecta.</div>
-    <button class="btn-primary" onclick="checkPassword()">Entrar</button>
-  </div>
-</div>
-
 <!-- ══ ADMIN PANEL ══ -->
-<div id="admin">
+<div id="admin" style="display:block">
   <div class="page-header">
     <h1>🌿 Panel de Admin</h1>
     <p class="sub">Revolución Saludable · Seguimiento de clientes</p>
+  </div>
+
+  <!-- Diario Alimentario -->
+  <div class="card">
+    <h2>📔 Sport & Food Journal</h2>
+    <p style="font-size:0.84rem;color:var(--brown-light);margin-bottom:16px;">Selecciona una clienta para ver su diario. Marca con ⭐ las que están activas contigo.</p>
+    <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;">
+      <select id="diario-email-input" onchange="if(this.value){loadClientJournal();updateFavBtn();}else{updateFavBtn();}"
+        style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:0.9rem;background:var(--white);color:var(--brown-dark);cursor:pointer;">
+        <option value="">— Selecciona una clienta —</option>
+      </select>
+      <button id="fav-btn" onclick="toggleFavorite()"
+        title="Marcar como favorita"
+        style="flex-shrink:0;padding:9px 13px;border:1.5px solid var(--border);border-radius:4px;background:var(--white);font-size:1.1rem;cursor:pointer;transition:background 0.15s;">⭐</button>
+    </div>
+    <div id="diario-admin-container"></div>
   </div>
 
   <!-- Formulario de precarga -->
@@ -404,19 +373,6 @@
   <div class="lightbox-overlay" id="lightbox" onclick="closeLightbox()">
     <button class="lightbox-close" onclick="closeLightbox()">✕</button>
     <img id="lightbox-img" src="" alt="foto">
-  </div>
-
-  <!-- Diario Alimentario -->
-  <div class="card">
-    <h2>📔 Sport & Food Journal</h2>
-    <p style="font-size:0.84rem;color:var(--brown-light);margin-bottom:16px;">Consulta el diario de alimentación y deporte de una clienta ingresando su correo.</p>
-    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
-      <input type="email" id="diario-email-input" placeholder="correo@cliente.com"
-        style="flex:1;min-width:200px;padding:10px 12px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:0.9rem;"
-        onkeydown="if(event.key==='Enter')loadClientJournal()" />
-      <button class="btn-save" style="width:auto;" onclick="loadClientJournal()">Ver diario</button>
-    </div>
-    <div id="diario-admin-container"></div>
   </div>
 
   <!-- Comunidad -->
@@ -514,22 +470,91 @@ function todayStr() { return new Date().toISOString().slice(0, 10); }
 /* ══════════════════════════════════════
    PASSWORD GATE
    ══════════════════════════════════════ */
-function checkPassword() {
-  if (document.getElementById('pwd-input').value === ADMIN_PASSWORD) {
-    document.getElementById('pwd-gate').classList.add('hidden');
-    document.getElementById('admin').style.display = 'block';
-    initWeekPicker();
-    initFirebase();
-    loadRetosConfig();
-    loadClients();
-  } else {
-    document.getElementById('pwd-error').style.display = 'block';
-    document.getElementById('pwd-input').focus();
+/* Inicialización directa sin contraseña */
+function initAdmin() {
+  initWeekPicker();
+  initFirebase();
+  loadRetosConfig();
+  loadClients();
+  populateClientDropdown();
+}
+
+/* ── Favoritos (guardados en localStorage) ── */
+const FAV_KEY = 'rs_admin_favs_v1';
+function getFavs() {
+  try { return JSON.parse(localStorage.getItem(FAV_KEY) || '[]'); } catch { return []; }
+}
+function saveFavs(arr) {
+  try { localStorage.setItem(FAV_KEY, JSON.stringify(arr)); } catch {}
+}
+function toggleFavorite() {
+  const sel = document.getElementById('diario-email-input');
+  const email = sel.value;
+  if (!email) return;
+  const favs = getFavs();
+  const idx  = favs.indexOf(email);
+  if (idx > -1) favs.splice(idx, 1); else favs.push(email);
+  saveFavs(favs);
+  rebuildDropdown(window._adminClients || []);
+  sel.value = email;
+  updateFavBtn();
+}
+function updateFavBtn() {
+  const sel   = document.getElementById('diario-email-input');
+  const btn   = document.getElementById('fav-btn');
+  if (!btn) return;
+  const isFav = sel.value && getFavs().includes(sel.value);
+  btn.style.background    = isFav ? '#fff8e1' : 'var(--white)';
+  btn.style.borderColor   = isFav ? '#e8c84a' : 'var(--border)';
+  btn.title = isFav ? 'Quitar de favoritas' : 'Marcar como favorita';
+}
+function rebuildDropdown(clients) {
+  window._adminClients = clients;
+  const sel  = document.getElementById('diario-email-input');
+  const favs = getFavs();
+  const favClients   = clients.filter(c => favs.includes(c.email));
+  const otherClients = clients.filter(c => !favs.includes(c.email));
+  // Limpiar opciones excepto la primera (placeholder)
+  while (sel.options.length > 1) sel.remove(1);
+  if (favClients.length) {
+    const grpFav = document.createElement('optgroup');
+    grpFav.label = '⭐ Clientas activas';
+    favClients.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.email;
+      opt.textContent = c.name ? `${c.name} (${c.email})` : c.email;
+      grpFav.appendChild(opt);
+    });
+    sel.appendChild(grpFav);
+  }
+  if (otherClients.length) {
+    const grpOther = document.createElement('optgroup');
+    grpOther.label = favClients.length ? 'Todas las clientas' : 'Clientas';
+    otherClients.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.email;
+      opt.textContent = c.name ? `${c.name} (${c.email})` : c.email;
+      grpOther.appendChild(opt);
+    });
+    sel.appendChild(grpOther);
   }
 }
-document.getElementById('pwd-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') checkPassword();
-});
+
+async function populateClientDropdown() {
+  if (!db) return;
+  try {
+    const snap = await db.collection('usuarios').get();
+    const clients = [];
+    snap.forEach(doc => {
+      const d = doc.data();
+      if (d.email) clients.push({ name: d.name || '', email: d.email });
+    });
+    clients.sort((a, b) => (a.name || a.email).localeCompare(b.name || b.email));
+    rebuildDropdown(clients);
+  } catch(e) {
+    console.warn('populateClientDropdown error:', e);
+  }
+}
 
 /* ══════════════════════════════════════
    WEEK PICKER (formulario)
@@ -1285,9 +1310,10 @@ function adminEmailToDocId(email) {
 }
 
 async function loadClientJournal() {
-  const email = document.getElementById('diario-email-input').value.trim().toLowerCase();
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    document.getElementById('diario-admin-container').innerHTML = '<p style="color:var(--red);font-size:0.85rem;">⚠️ Ingresa un correo válido.</p>';
+  const sel = document.getElementById('diario-email-input');
+  const email = (sel.value || '').trim().toLowerCase();
+  if (!email) {
+    document.getElementById('diario-admin-container').innerHTML = '';
     return;
   }
   adminJournalEmail = email;
@@ -1714,6 +1740,9 @@ async function renderClientVision(sid, docId) {
 
   </div>`;
 }
+
+/* ══ ARRANQUE ══ */
+initAdmin();
 </script>
 </body>
 </html>
