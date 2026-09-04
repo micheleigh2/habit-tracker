@@ -8,6 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -353,6 +354,34 @@
     </div>
   </div>
 
+  <!-- Exportar Diario a Excel -->
+  <div class="card">
+    <h2>📥 Exportar diario a Excel</h2>
+    <p style="font-size:0.84rem;color:var(--brown-light);margin-bottom:18px;">
+      Selecciona una clienta y un rango de fechas para descargar su diario alimentario y de deporte. Las fechas van hacia el lado y las entradas hacia abajo.
+    </p>
+    <div class="form-grid" style="margin-bottom:16px;">
+      <div class="field">
+        <label>Clienta</label>
+        <select id="export-email-input"
+          style="width:100%;padding:9px 13px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:0.9rem;background:var(--cream);color:var(--brown-dark);cursor:pointer;">
+          <option value="">— Selecciona una clienta —</option>
+        </select>
+      </div>
+      <div></div>
+      <div class="field">
+        <label>Desde</label>
+        <input type="date" id="export-date-from" />
+      </div>
+      <div class="field">
+        <label>Hasta</label>
+        <input type="date" id="export-date-to" />
+      </div>
+    </div>
+    <button class="btn-save" id="btn-export" onclick="exportDiarioExcel(this)" style="max-width:280px;">⬇ Descargar Excel</button>
+    <div class="feedback" id="export-feedback" style="margin-top:12px;"></div>
+  </div>
+
   <!-- Formulario de precarga -->
   <div class="card">
     <h2>✨ Pre-cargar hábitos para un cliente</h2>
@@ -493,6 +522,7 @@ function initAdmin() {
   loadRetosConfig();
   loadClients();
   populateClientDropdown();
+  initExportDropdown();
 }
 
 /* ── Favoritos (guardados en localStorage) ── */
@@ -554,6 +584,33 @@ function rebuildDropdown(clients) {
     });
     sel.appendChild(grpOther);
   }
+  // Sincronizar dropdown de exportación
+  _syncExportDropdown(clients);
+}
+
+function _syncExportDropdown(clients) {
+  const dest = document.getElementById('export-email-input');
+  if (!dest) return;
+  const prevVal = dest.value;
+  while (dest.options.length > 1) dest.remove(1);
+  const favs = getFavs();
+  const favClients   = clients.filter(c => favs.includes(c.email));
+  const otherClients = clients.filter(c => !favs.includes(c.email));
+  function addGrp(label, arr) {
+    if (!arr.length) return;
+    const grp = document.createElement('optgroup');
+    grp.label = label;
+    arr.forEach(c => {
+      const o = document.createElement('option');
+      o.value = c.email;
+      o.textContent = c.name ? `${c.name} (${c.email})` : c.email;
+      grp.appendChild(o);
+    });
+    dest.appendChild(grp);
+  }
+  addGrp('⭐ Clientas activas', favClients);
+  addGrp(favClients.length ? 'Todas las clientas' : 'Clientas', otherClients);
+  if (prevVal) dest.value = prevVal;
 }
 
 async function populateClientDropdown() {
@@ -1924,6 +1981,242 @@ function renderAdminTracker() {
 function adminChangeTrackerWeek(days) {
   adminTrackerWeek = addDays(adminTrackerWeek, days);
   renderAdminTracker();
+}
+
+/* ══════════════════════════════════════
+   EXPORTAR DIARIO A EXCEL
+   ══════════════════════════════════════ */
+function initExportDropdown() {
+  // Fechas por defecto: últimos 30 días
+  const today = adminTodayISO();
+  const monthAgo = (() => { const d = new Date(); d.setDate(d.getDate()-29); return d.toISOString().slice(0,10); })();
+  document.getElementById('export-date-from').value = monthAgo;
+  document.getElementById('export-date-to').value   = today;
+}
+
+async function exportDiarioExcel(btn) {
+  const email    = document.getElementById('export-email-input').value.trim().toLowerCase();
+  const dateFrom = document.getElementById('export-date-from').value;
+  const dateTo   = document.getElementById('export-date-to').value;
+  const fbEl     = document.getElementById('export-feedback');
+
+  fbEl.className = 'feedback'; fbEl.style.display = 'none'; fbEl.innerHTML = '';
+
+  if (!email)    { fbEl.className='feedback error'; fbEl.textContent='⚠️ Selecciona una clienta.'; return; }
+  if (!dateFrom || !dateTo) { fbEl.className='feedback error'; fbEl.textContent='⚠️ Selecciona un rango de fechas.'; return; }
+  if (dateFrom > dateTo)    { fbEl.className='feedback error'; fbEl.textContent='⚠️ La fecha "desde" debe ser anterior a "hasta".'; return; }
+
+  btn.disabled = true; btn.textContent = 'Cargando...';
+
+  try {
+    // ── Cargar datos ──
+    const snap = await db.collection('diario').doc(adminEmailToDocId(email)).get();
+    const data  = snap.exists ? (snap.data() || {}) : {};
+    const coachFeedback = data.coachFeedback || {};
+
+    // ── Generar TODOS los días del rango (con o sin datos) ──
+    const allDates = [];
+    const cursor = new Date(dateFrom + 'T12:00:00');
+    const end    = new Date(dateTo   + 'T12:00:00');
+    while (cursor <= end) {
+      allDates.push(cursor.toISOString().slice(0, 10));
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
+    const hasAnyData = allDates.some(d => (data[d] || []).length > 0);
+    if (!hasAnyData) {
+      fbEl.className = 'feedback warning'; fbEl.style.display = 'block';
+      fbEl.textContent = '⚠️ No hay entradas en ese rango de fechas.';
+      return;
+    }
+
+    // ── Paleta de colores (basada en brand) ──
+    const C = {
+      brownDark:   '3F2417',
+      brownMid:    '625347',
+      brownLight:  '9A8070',
+      cream:       'F8E8D7',
+      creamDark:   'E8D3BC',
+      white:       'FFF8F0',
+      green:       '4A7C59',
+      greenPale:   'EDF7F0',
+      accentPale:  'F5ECE5',
+      feedbackBg:  'FFF3E8',
+    };
+
+    // ── Estilos reutilizables ──
+    const wrap  = { wrapText: true, vertical: 'top' };
+    const wrapC = { wrapText: true, vertical: 'top', horizontal: 'center' };
+    const thinBorder = side => ({ style: 'thin', color: { rgb: C.creamDark } });
+    const allBorders = { top: thinBorder(), bottom: thinBorder(), left: thinBorder(), right: thinBorder() };
+
+    const sHeader = {  // fila de encabezados (fechas)
+      font:      { bold: true, color: { rgb: C.white }, sz: 11 },
+      fill:      { fgColor: { rgb: C.brownDark } },
+      alignment: wrapC,
+      border:    allBorders,
+    };
+    const sHeaderLabel = {  // celda "Entrada" arriba a la izq
+      font:      { bold: true, color: { rgb: C.white }, sz: 11 },
+      fill:      { fgColor: { rgb: C.brownDark } },
+      alignment: { vertical: 'center', horizontal: 'center' },
+      border:    allBorders,
+    };
+    const sRowLabel = (alt) => ({  // etiqueta "Entrada N" en col A
+      font:      { bold: true, color: { rgb: C.brownMid }, sz: 10 },
+      fill:      { fgColor: { rgb: alt ? C.creamDark : C.cream } },
+      alignment: { vertical: 'top', horizontal: 'center' },
+      border:    allBorders,
+    });
+    const sCell = (alt) => ({  // celda de contenido
+      font:      { color: { rgb: C.brownDark }, sz: 10 },
+      fill:      { fgColor: { rgb: alt ? C.accentPale : C.white } },
+      alignment: wrap,
+      border:    allBorders,
+    });
+    const sMoodLabel = {
+      font:      { bold: true, color: { rgb: C.green }, sz: 10 },
+      fill:      { fgColor: { rgb: C.greenPale } },
+      alignment: { vertical: 'top', horizontal: 'center' },
+      border:    allBorders,
+    };
+    const sMoodCell = {
+      font:      { color: { rgb: C.brownMid }, sz: 11 },
+      fill:      { fgColor: { rgb: C.greenPale } },
+      alignment: wrapC,
+      border:    allBorders,
+    };
+    const sFeedbackLabel = {
+      font:      { bold: true, italic: true, color: { rgb: C.brownMid }, sz: 10 },
+      fill:      { fgColor: { rgb: C.feedbackBg } },
+      alignment: { vertical: 'top', horizontal: 'center' },
+      border:    allBorders,
+    };
+    const sFeedbackCell = {
+      font:      { italic: true, color: { rgb: C.brownMid }, sz: 10 },
+      fill:      { fgColor: { rgb: C.feedbackBg } },
+      alignment: wrap,
+      border:    allBorders,
+    };
+
+    // ── Formato encabezado de fecha ──
+    const fmtDateHeader = iso => {
+      const d = new Date(iso + 'T12:00:00');
+      const wd  = d.toLocaleDateString('es-CL', { weekday: 'short' });
+      const day = d.toLocaleDateString('es-CL', { day: 'numeric', month: 'short' });
+      return wd.charAt(0).toUpperCase() + wd.slice(1) + '\n' + day;
+    };
+
+    // ── Calcular máx entradas por día ──
+    const maxEntries = Math.max(...allDates.map(d => (data[d] || []).length), 1);
+
+    // ── Construir datos como array de arrays ──
+    const aoa = [];
+
+    // Fila 0: encabezados
+    aoa.push(['', ...allDates.map(fmtDateHeader)]);
+
+    // Filas de entradas
+    for (let i = 0; i < maxEntries; i++) {
+      const row = [`Entrada ${i + 1}`];
+      allDates.forEach(d => {
+        const entries = (data[d] || []).slice().sort((a,b) => (a.ts||0)-(b.ts||0));
+        const e = entries[i];
+        if (e) {
+          const time = e.time ? e.time + '\n' : '';
+          const cat  = e.categoria ? '[' + e.categoria + ']\n' : '';
+          row.push(time + cat + (e.text || '').trim());
+        } else {
+          row.push('');
+        }
+      });
+      aoa.push(row);
+    }
+
+    // Fila vacía separadora
+    aoa.push(new Array(allDates.length + 1).fill(''));
+
+    // Fila de emociones
+    const moodRow = ['Emociones'];
+    allDates.forEach(d => {
+      const entries = (data[d] || []).slice().sort((a,b) => (a.ts||0)-(b.ts||0));
+      moodRow.push(entries.map(e => e.mood || '').filter(Boolean).join('  ') || '—');
+    });
+    aoa.push(moodRow);
+
+    // Fila de feedback del coach
+    const feedbackRow = ['Feedback coach'];
+    allDates.forEach(d => { feedbackRow.push(coachFeedback[d] || ''); });
+    aoa.push(feedbackRow);
+
+    // ── Crear worksheet ──
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+    // ── Anchos de columnas ──
+    ws['!cols'] = [{ wch: 11 }, ...allDates.map(() => ({ wch: 30 }))];
+
+    // ── Fijar primera fila y primera columna ──
+    ws['!freeze'] = { xSplit: 1, ySplit: 1, topLeftCell: 'B2', state: 'frozen' };
+
+    // ── Altura de filas ──
+    const rowHeights = [{ hpt: 36 }];  // header
+    for (let i = 0; i < maxEntries; i++) rowHeights.push({ hpt: 60 });
+    rowHeights.push({ hpt: 6 });   // separador
+    rowHeights.push({ hpt: 32 });  // emociones
+    rowHeights.push({ hpt: 48 });  // feedback
+    ws['!rows'] = rowHeights;
+
+    // ── Aplicar estilos celda por celda ──
+    const R_HEADER   = 0;
+    const R_ENTRIES_START = 1;
+    const R_ENTRIES_END   = maxEntries;
+    const R_SEP      = maxEntries + 1;
+    const R_MOOD     = maxEntries + 2;
+    const R_FEEDBACK = maxEntries + 3;
+    const totalCols  = allDates.length + 1;
+
+    function setStyle(r, c, s) {
+      const addr = XLSX.utils.encode_cell({ r, c });
+      if (!ws[addr]) ws[addr] = { t: 's', v: '' };
+      ws[addr].s = s;
+    }
+
+    // Header row
+    setStyle(R_HEADER, 0, sHeaderLabel);
+    for (let c = 1; c < totalCols; c++) setStyle(R_HEADER, c, sHeader);
+
+    // Entry rows
+    for (let r = R_ENTRIES_START; r <= R_ENTRIES_END; r++) {
+      const alt = (r % 2 === 0);
+      setStyle(r, 0, sRowLabel(alt));
+      for (let c = 1; c < totalCols; c++) setStyle(r, c, sCell(alt));
+    }
+
+    // Mood row
+    setStyle(R_MOOD, 0, sMoodLabel);
+    for (let c = 1; c < totalCols; c++) setStyle(R_MOOD, c, sMoodCell);
+
+    // Feedback row
+    setStyle(R_FEEDBACK, 0, sFeedbackLabel);
+    for (let c = 1; c < totalCols; c++) setStyle(R_FEEDBACK, c, sFeedbackCell);
+
+    // ── Crear workbook y descargar ──
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Diario');
+
+    const clientName = document.getElementById('export-email-input').selectedOptions[0]
+      ?.textContent?.split('(')[0]?.trim() || email;
+    const fileName = `Diario_${clientName.replace(/\s+/g,'_')}_${dateFrom}_${dateTo}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+
+    fbEl.className = 'feedback success'; fbEl.style.display = 'block';
+    fbEl.textContent = `✅ Excel descargado: ${allDates.length} día${allDates.length!==1?'s':''}, ${maxEntries} entrada${maxEntries!==1?'s':''} por día máx.`;
+  } catch (e) {
+    fbEl.className = 'feedback error'; fbEl.style.display = 'block';
+    fbEl.textContent = '❌ Error: ' + e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = '⬇ Descargar Excel';
+  }
 }
 
 /* ══ ARRANQUE ══ */
