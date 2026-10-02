@@ -1428,12 +1428,9 @@ async function loadClientJournal() {
   try {
     const docId = adminEmailToDocId(email);
     const snap  = await db.collection('diario').doc(docId).get();
-    const raw   = snap.exists ? (snap.data() || {}) : {};
-    // Extraer notas privadas del mismo doc (campo _adminNotes)
-    adminNotesCache[docId] = raw._adminNotes || {};
-    // El resto es el diario de la clienta
-    const { _adminNotes: _ignored, ...journalOnly } = raw;
-    adminJournalData = journalOnly;
+    adminJournalData = snap.exists ? (snap.data() || {}) : {};
+    // Cargar notas privadas desde localStorage (sin red)
+    await loadAdminNotesForDoc(docId);
     renderAdminJournal();
   } catch (e) {
     document.getElementById('diario-admin-container').innerHTML = `<p style="color:var(--red);font-size:0.84rem;">Error: ${e.message}</p>`;
@@ -1577,10 +1574,9 @@ async function renderClientDiario(sid, docId) {
     pane.innerHTML = '<p class="no-progress" style="padding:16px 0">Cargando diario...</p>';
     try {
       const snap = await db.collection('diario').doc(docId).get();
-      const raw  = snap.exists ? (snap.data() || {}) : {};
-      adminNotesCache[docId] = raw._adminNotes || {};
-      const { _adminNotes: _ign, ...journalOnly } = raw;
-      clientJournalCache[docId] = journalOnly;
+      clientJournalCache[docId] = snap.exists ? (snap.data() || {}) : {};
+      // Notas privadas desde localStorage
+      await loadAdminNotesForDoc(docId);
     } catch (e) {
       pane.innerHTML = `<p class="no-progress" style="color:var(--red)">Error: ${e.message}</p>`;
       return;
@@ -1864,12 +1860,12 @@ async function renderClientVision(sid, docId) {
    ══════════════════════════════════════ */
 const adminNotesCache = {};   // docId → { 'YYYY-MM-DD': { note, starred, ts } }
 
+// Notas guardadas en 'habitos/{docId}' campo '_adminNotes'
+// (colección con permisos, y el cliente nunca lee ese campo)
 async function loadAdminNotesForDoc(docId) {
   if (adminNotesCache[docId] !== undefined) return adminNotesCache[docId];
   try {
-    // Las notas se guardan en el mismo doc de diario, campo '_adminNotes'
-    // La app del cliente nunca lee ese campo, así que es invisible para ella
-    const snap = await db.collection('diario').doc(docId).get();
+    const snap = await db.collection('habitos').doc(docId).get();
     adminNotesCache[docId] = snap.exists ? (snap.data()._adminNotes || {}) : {};
   } catch { adminNotesCache[docId] = {}; }
   return adminNotesCache[docId];
@@ -1926,7 +1922,8 @@ async function _saveAdminNoteBtn(saveBtn) {
   saveBtn.disabled = true; saveBtn.textContent = 'Guardando...';
   try {
     const payload = { note, starred, ts: Date.now() };
-    await db.collection('diario').doc(docId).set(
+    // Guardar en habitos/{docId} campo _adminNotes (el cliente nunca lo lee)
+    await db.collection('habitos').doc(docId).set(
       { _adminNotes: { [dateStr]: payload } },
       { merge: true }
     );
@@ -2139,8 +2136,10 @@ async function exportDiarioExcel(btn) {
     const docId = adminEmailToDocId(email);
     const snap  = await db.collection('diario').doc(docId).get();
     const data  = snap.exists ? (snap.data() || {}) : {};
-    const adminNotes    = data._adminNotes   || {};
     const coachFeedback = data.coachFeedback || {};
+    // Notas privadas desde habitos/{docId}._adminNotes
+    const habitosSnap = await db.collection('habitos').doc(docId).get();
+    const adminNotes  = habitosSnap.exists ? (habitosSnap.data()._adminNotes || {}) : {};
 
     // ── Generar TODOS los días del rango (con o sin datos) ──
     const allDates = [];
