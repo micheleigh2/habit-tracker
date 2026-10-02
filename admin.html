@@ -261,6 +261,39 @@
   .feedback-saved-msg { font-size: 0.75rem; color: var(--green); margin-left: 10px; opacity: 0; transition: opacity 0.3s; }
   .feedback-saved-msg.show { opacity: 1; }
 
+  /* ══ NOTA PRIVADA ADMIN ══ */
+  .admin-private-note {
+    margin-top: 16px; padding-top: 14px; border-top: 1px solid #e0d0f0;
+    background: #faf6ff; border-radius: 0 0 6px 6px; padding: 14px 14px 12px;
+  }
+  .admin-private-label {
+    font-size: 0.6rem; letter-spacing: 1.5px; text-transform: uppercase;
+    color: #7c5c9e; font-weight: 600; margin-bottom: 8px; display: block;
+  }
+  .admin-private-ta {
+    width: 100%; border: 1.5px solid #d8c5ec; border-radius: 5px;
+    padding: 9px 11px; font-family: 'Jost', sans-serif; font-size: 0.86rem;
+    color: var(--brown-dark); background: #fff; outline: none;
+    resize: vertical; min-height: 58px; line-height: 1.5; transition: border-color 0.2s;
+    box-sizing: border-box;
+  }
+  .admin-private-ta:focus { border-color: #9c6fbe; }
+  .admin-star-btn {
+    flex-shrink: 0; font-size: 1.25rem; background: var(--white);
+    border: 1.5px solid #d8c5ec; border-radius: 6px;
+    padding: 6px 11px; cursor: pointer; transition: background 0.15s, border-color 0.15s;
+    line-height: 1;
+  }
+  .admin-star-btn.starred { background: #f0e8f8; border-color: #9c6fbe; }
+  .btn-save-private {
+    background: #7c5c9e; color: #fff; border: none; border-radius: 4px;
+    padding: 7px 16px; font-family: 'Jost', sans-serif;
+    font-size: 0.75rem; font-weight: 500; letter-spacing: 1px; text-transform: uppercase;
+    cursor: pointer; transition: background 0.2s; margin-top: 8px;
+  }
+  .btn-save-private:hover { background: #5e4478; }
+  .btn-save-private:disabled { opacity: 0.5; cursor: not-allowed; }
+
   /* ══ VISION ADMIN ══ */
   .vision-admin-block { padding: 16px 18px; }
   .vision-admin-section { margin-bottom: 20px; }
@@ -1393,7 +1426,11 @@ async function loadClientJournal() {
   adminJournalDate  = adminTodayISO();
   document.getElementById('diario-admin-container').innerHTML = '<p style="font-size:0.84rem;color:var(--brown-light);">Cargando...</p>';
   try {
-    const snap = await db.collection('diario').doc(adminEmailToDocId(email)).get();
+    const docId = adminEmailToDocId(email);
+    const [snap] = await Promise.all([
+      db.collection('diario').doc(docId).get(),
+      loadAdminNotesForDoc(docId),
+    ]);
     adminJournalData = snap.exists ? (snap.data() || {}) : {};
     renderAdminJournal();
   } catch (e) {
@@ -1459,6 +1496,7 @@ function renderAdminJournal() {
         <span class="feedback-saved-msg" id="sa-feedback-saved">✓ Guardado</span>
       </div>
     </div>
+    ${buildAdminNoteHTML(adminEmailToDocId(adminJournalEmail), adminJournalDate)}
   `;
 }
 
@@ -1536,7 +1574,10 @@ async function renderClientDiario(sid, docId) {
   if (!clientJournalCache[docId]) {
     pane.innerHTML = '<p class="no-progress" style="padding:16px 0">Cargando diario...</p>';
     try {
-      const snap = await db.collection('diario').doc(docId).get();
+      const [snap] = await Promise.all([
+        db.collection('diario').doc(docId).get(),
+        loadAdminNotesForDoc(docId),
+      ]);
       clientJournalCache[docId] = snap.exists ? (snap.data() || {}) : {};
     } catch (e) {
       pane.innerHTML = `<p class="no-progress" style="color:var(--red)">Error: ${e.message}</p>`;
@@ -1617,6 +1658,7 @@ function renderClientDiarioForDate(sid, docId, dateStr) {
     ${entriesHTML}
     ${daysChips}
     ${feedbackHTML}
+    ${buildAdminNoteHTML(docId, dateStr)}
   `;
 }
 
@@ -1815,6 +1857,83 @@ async function renderClientVision(sid, docId) {
 }
 
 /* ══════════════════════════════════════
+   NOTAS PRIVADAS DEL ADMIN
+   (colección 'adminNotes' — el cliente nunca la lee)
+   ══════════════════════════════════════ */
+const adminNotesCache = {};   // docId → { 'YYYY-MM-DD': { note, starred, ts } }
+
+async function loadAdminNotesForDoc(docId) {
+  if (adminNotesCache[docId] !== undefined) return adminNotesCache[docId];
+  try {
+    const snap = await db.collection('adminNotes').doc(docId).get();
+    adminNotesCache[docId] = snap.exists ? (snap.data() || {}) : {};
+  } catch { adminNotesCache[docId] = {}; }
+  return adminNotesCache[docId];
+}
+
+function buildAdminNoteHTML(docId, dateStr) {
+  const notes    = adminNotesCache[docId] || {};
+  const existing = notes[dateStr] || {};
+  const note     = existing.note    || '';
+  const starred  = !!existing.starred;
+  const uid      = 'an_' + (docId + '_' + dateStr).replace(/[^a-zA-Z0-9]/g,'_');
+
+  return `
+    <div class="admin-private-note"
+      data-doc-id="${docId.replace(/"/g,'&quot;')}"
+      data-date-str="${dateStr}">
+      <span class="admin-private-label">🔒 Nota privada — solo visible para ti</span>
+      <div style="display:flex;gap:8px;align-items:flex-start;">
+        <button class="admin-star-btn${starred?' starred':''}"
+          data-starred="${starred?'1':'0'}"
+          title="${starred?'Quitar estrella':'Marcar como importante'}"
+          onclick="toggleAdminStar(this)">${starred?'⭐':'☆'}</button>
+        <textarea class="admin-private-ta an-ta-${uid}" rows="2"
+          placeholder="Escribe tu nota privada sobre este día...">${note.replace(/</g,'&lt;')}</textarea>
+      </div>
+      <div style="display:flex;align-items:center;">
+        <button class="btn-save-private an-save-btn" onclick="_saveAdminNoteBtn(this)">
+          Guardar nota
+        </button>
+        <span class="feedback-saved-msg an-saved-msg" style="color:#7c5c9e;">✓ Guardada</span>
+      </div>
+    </div>`;
+}
+
+function toggleAdminStar(btn) {
+  const isStarred = btn.dataset.starred === '1';
+  btn.dataset.starred = isStarred ? '0' : '1';
+  btn.textContent     = isStarred ? '☆' : '⭐';
+  btn.title           = isStarred ? 'Marcar como importante' : 'Quitar estrella';
+  btn.classList.toggle('starred', !isStarred);
+}
+
+async function _saveAdminNoteBtn(saveBtn) {
+  const block   = saveBtn.closest('.admin-private-note');
+  if (!block) return;
+  const docId   = block.dataset.docId;
+  const dateStr = block.dataset.dateStr;
+  const ta      = block.querySelector('.admin-private-ta');
+  const starBtn = block.querySelector('.admin-star-btn');
+  const savedEl = block.querySelector('.an-saved-msg');
+  const note    = (ta?.value || '').trim();
+  const starred = starBtn?.dataset.starred === '1';
+
+  saveBtn.disabled = true; saveBtn.textContent = 'Guardando...';
+  try {
+    const payload = { note, starred, ts: Date.now() };
+    await db.collection('adminNotes').doc(docId).set({ [dateStr]: payload }, { merge: true });
+    if (!adminNotesCache[docId]) adminNotesCache[docId] = {};
+    adminNotesCache[docId][dateStr] = payload;
+    if (savedEl) { savedEl.classList.add('show'); setTimeout(() => savedEl.classList.remove('show'), 2200); }
+  } catch (e) {
+    alert('Error al guardar nota: ' + e.message);
+  } finally {
+    saveBtn.disabled = false; saveBtn.textContent = 'Guardar nota';
+  }
+}
+
+/* ══════════════════════════════════════
    VISTA RÁPIDA — TAB SWITCHER
    ══════════════════════════════════════ */
 let _quickActiveTab = 'diario';
@@ -2009,9 +2128,14 @@ async function exportDiarioExcel(btn) {
   btn.disabled = true; btn.textContent = 'Cargando...';
 
   try {
-    // ── Cargar datos ──
-    const snap = await db.collection('diario').doc(adminEmailToDocId(email)).get();
-    const data  = snap.exists ? (snap.data() || {}) : {};
+    // ── Cargar datos (diario + notas privadas) ──
+    const docId = adminEmailToDocId(email);
+    const [snap, notesSnap] = await Promise.all([
+      db.collection('diario').doc(docId).get(),
+      db.collection('adminNotes').doc(docId).get(),
+    ]);
+    const data         = snap.exists      ? (snap.data()      || {}) : {};
+    const adminNotes   = notesSnap.exists ? (notesSnap.data() || {}) : {};
     const coachFeedback = data.coachFeedback || {};
 
     // ── Generar TODOS los días del rango (con o sin datos) ──
@@ -2149,6 +2273,19 @@ async function exportDiarioExcel(btn) {
     allDates.forEach(d => { feedbackRow.push(coachFeedback[d] || ''); });
     aoa.push(feedbackRow);
 
+    // Separador
+    aoa.push(new Array(allDates.length + 1).fill(''));
+
+    // Fila de estrella (notas privadas — marcadas como importantes)
+    const starRow = ['⭐ Destacada'];
+    allDates.forEach(d => { starRow.push(adminNotes[d]?.starred ? '⭐' : ''); });
+    aoa.push(starRow);
+
+    // Fila de nota privada
+    const privateNoteRow = ['🔒 Nota privada'];
+    allDates.forEach(d => { privateNoteRow.push(adminNotes[d]?.note || ''); });
+    aoa.push(privateNoteRow);
+
     // ── Crear worksheet ──
     const ws = XLSX.utils.aoa_to_sheet(aoa);
 
@@ -2158,21 +2295,53 @@ async function exportDiarioExcel(btn) {
     // ── Fijar primera fila y primera columna ──
     ws['!freeze'] = { xSplit: 1, ySplit: 1, topLeftCell: 'B2', state: 'frozen' };
 
+    // ── Estilos para notas privadas ──
+    const sStarLabel = {
+      font:      { bold: true, color: { rgb: '7C5C9E' }, sz: 10 },
+      fill:      { fgColor: { rgb: 'F0E8F8' } },
+      alignment: { vertical: 'top', horizontal: 'center' },
+      border:    allBorders,
+    };
+    const sStarCell = {
+      font:      { color: { rgb: '7C5C9E' }, sz: 14 },
+      fill:      { fgColor: { rgb: 'F0E8F8' } },
+      alignment: { vertical: 'center', horizontal: 'center' },
+      border:    allBorders,
+    };
+    const sPrivateLabel = {
+      font:      { bold: true, italic: true, color: { rgb: '7C5C9E' }, sz: 10 },
+      fill:      { fgColor: { rgb: 'EDE0F8' } },
+      alignment: { vertical: 'top', horizontal: 'center' },
+      border:    allBorders,
+    };
+    const sPrivateCell = {
+      font:      { italic: true, color: { rgb: '5E4478' }, sz: 10 },
+      fill:      { fgColor: { rgb: 'EDE0F8' } },
+      alignment: wrap,
+      border:    allBorders,
+    };
+
     // ── Altura de filas ──
     const rowHeights = [{ hpt: 36 }];  // header
     for (let i = 0; i < maxEntries; i++) rowHeights.push({ hpt: 60 });
-    rowHeights.push({ hpt: 6 });   // separador
+    rowHeights.push({ hpt: 6 });   // separador 1
     rowHeights.push({ hpt: 32 });  // emociones
     rowHeights.push({ hpt: 48 });  // feedback
+    rowHeights.push({ hpt: 6 });   // separador 2
+    rowHeights.push({ hpt: 28 });  // estrella
+    rowHeights.push({ hpt: 56 });  // nota privada
     ws['!rows'] = rowHeights;
 
     // ── Aplicar estilos celda por celda ──
-    const R_HEADER   = 0;
+    const R_HEADER        = 0;
     const R_ENTRIES_START = 1;
     const R_ENTRIES_END   = maxEntries;
-    const R_SEP      = maxEntries + 1;
+    const R_SEP1     = maxEntries + 1;
     const R_MOOD     = maxEntries + 2;
     const R_FEEDBACK = maxEntries + 3;
+    const R_SEP2     = maxEntries + 4;
+    const R_STAR     = maxEntries + 5;
+    const R_PRIVATE  = maxEntries + 6;
     const totalCols  = allDates.length + 1;
 
     function setStyle(r, c, s) {
@@ -2199,6 +2368,14 @@ async function exportDiarioExcel(btn) {
     // Feedback row
     setStyle(R_FEEDBACK, 0, sFeedbackLabel);
     for (let c = 1; c < totalCols; c++) setStyle(R_FEEDBACK, c, sFeedbackCell);
+
+    // Star row
+    setStyle(R_STAR, 0, sStarLabel);
+    for (let c = 1; c < totalCols; c++) setStyle(R_STAR, c, sStarCell);
+
+    // Private note row
+    setStyle(R_PRIVATE, 0, sPrivateLabel);
+    for (let c = 1; c < totalCols; c++) setStyle(R_PRIVATE, c, sPrivateCell);
 
     // ── Crear workbook y descargar ──
     const wb = XLSX.utils.book_new();
