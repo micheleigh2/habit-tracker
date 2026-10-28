@@ -8,7 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -2129,19 +2129,18 @@ async function exportDiarioExcel(btn) {
   if (!dateFrom || !dateTo) { fbEl.className='feedback error'; fbEl.textContent='⚠️ Selecciona un rango de fechas.'; return; }
   if (dateFrom > dateTo)    { fbEl.className='feedback error'; fbEl.textContent='⚠️ La fecha "desde" debe ser anterior a "hasta".'; return; }
 
-  btn.disabled = true; btn.textContent = 'Cargando...';
+  btn.disabled = true; btn.textContent = 'Generando Excel...';
 
   try {
-    // ── Cargar datos (diario + notas privadas) ──
+    // ── Cargar datos ──
     const docId = adminEmailToDocId(email);
     const snap  = await db.collection('diario').doc(docId).get();
     const data  = snap.exists ? (snap.data() || {}) : {};
     const coachFeedback = data.coachFeedback || {};
-    // Notas privadas desde habitos/{docId}._adminNotes
     const habitosSnap = await db.collection('habitos').doc(docId).get();
     const adminNotes  = habitosSnap.exists ? (habitosSnap.data()._adminNotes || {}) : {};
 
-    // ── Generar TODOS los días del rango (con o sin datos) ──
+    // ── Todos los días del rango ──
     const allDates = [];
     const cursor = new Date(dateFrom + 'T12:00:00');
     const end    = new Date(dateTo   + 'T12:00:00');
@@ -2157,224 +2156,210 @@ async function exportDiarioExcel(btn) {
       return;
     }
 
-    // ── Paleta de colores (basada en brand) ──
+    // ── Pre-ordenar entradas ──
+    const sorted = {};
+    allDates.forEach(d => {
+      sorted[d] = (data[d] || []).slice().sort((a,b) => (a.ts||0)-(b.ts||0));
+    });
+    const maxEntries = Math.max(...allDates.map(d => sorted[d].length), 1);
+
+    // ── ExcelJS workbook ──
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'Revolución Saludable Admin';
+    const ws = wb.addWorksheet('Diario');
+
+    // Anchos de columna
+    ws.columns = [{ width: 12 }, ...allDates.map(() => ({ width: 28 }))];
+
+    // Freeze primera fila + primera columna
+    ws.views = [{ state: 'frozen', xSplit: 1, ySplit: 1, topLeftCell: 'B2', activeCell: 'B2' }];
+
+    // ── Paleta ARGB (FF = opaco) ──
     const C = {
-      brownDark:   '3F2417',
-      brownMid:    '625347',
-      brownLight:  '9A8070',
-      cream:       'F8E8D7',
-      creamDark:   'E8D3BC',
-      white:       'FFF8F0',
-      green:       '4A7C59',
-      greenPale:   'EDF7F0',
-      accentPale:  'F5ECE5',
-      feedbackBg:  'FFF3E8',
+      brownDark:  'FF3F2417',
+      brownMid:   'FF625347',
+      brownLight: 'FF9A8070',
+      cream:      'FFF8E8D7',
+      creamDark:  'FFE8D3BC',
+      white:      'FFFFF8F0',
+      accentPale: 'FFF5ECE5',
+      feedbackBg: 'FFFFF3E8',
+      purple:     'FF7C5C9E',
+      purpleDark: 'FF5E4478',
+      purplePale: 'FFEDE0F8',
+      starPale:   'FFF0E8F8',
     };
-
-    // ── Estilos reutilizables ──
-    const wrap  = { wrapText: true, vertical: 'top' };
-    const wrapC = { wrapText: true, vertical: 'top', horizontal: 'center' };
-    const thinBorder = side => ({ style: 'thin', color: { rgb: C.creamDark } });
-    const allBorders = { top: thinBorder(), bottom: thinBorder(), left: thinBorder(), right: thinBorder() };
-
-    const sHeader = {  // fila de encabezados (fechas)
-      font:      { bold: true, color: { rgb: C.white }, sz: 11 },
-      fill:      { fgColor: { rgb: C.brownDark } },
-      alignment: wrapC,
-      border:    allBorders,
-    };
-    const sHeaderLabel = {  // celda "Entrada" arriba a la izq
-      font:      { bold: true, color: { rgb: C.white }, sz: 11 },
-      fill:      { fgColor: { rgb: C.brownDark } },
-      alignment: { vertical: 'center', horizontal: 'center' },
-      border:    allBorders,
-    };
-    const sRowLabel = (alt) => ({  // etiqueta "Entrada N" en col A
-      font:      { bold: true, color: { rgb: C.brownMid }, sz: 10 },
-      fill:      { fgColor: { rgb: alt ? C.creamDark : C.cream } },
-      alignment: { vertical: 'top', horizontal: 'center' },
-      border:    allBorders,
+    const border = color => ({
+      top:    { style: 'thin', color: { argb: color } },
+      bottom: { style: 'thin', color: { argb: color } },
+      left:   { style: 'thin', color: { argb: color } },
+      right:  { style: 'thin', color: { argb: color } },
     });
-    const sCell = (alt) => ({  // celda de contenido
-      font:      { color: { rgb: C.brownDark }, sz: 10 },
-      fill:      { fgColor: { rgb: alt ? C.accentPale : C.white } },
-      alignment: wrap,
-      border:    allBorders,
-    });
-    const sMoodLabel = {
-      font:      { bold: true, color: { rgb: C.green }, sz: 10 },
-      fill:      { fgColor: { rgb: C.greenPale } },
-      alignment: { vertical: 'top', horizontal: 'center' },
-      border:    allBorders,
-    };
-    const sMoodCell = {
-      font:      { color: { rgb: C.brownMid }, sz: 11 },
-      fill:      { fgColor: { rgb: C.greenPale } },
-      alignment: wrapC,
-      border:    allBorders,
-    };
-    const sFeedbackLabel = {
-      font:      { bold: true, italic: true, color: { rgb: C.brownMid }, sz: 10 },
-      fill:      { fgColor: { rgb: C.feedbackBg } },
-      alignment: { vertical: 'top', horizontal: 'center' },
-      border:    allBorders,
-    };
-    const sFeedbackCell = {
-      font:      { italic: true, color: { rgb: C.brownMid }, sz: 10 },
-      fill:      { fgColor: { rgb: C.feedbackBg } },
-      alignment: wrap,
-      border:    allBorders,
-    };
 
-    // ── Formato encabezado de fecha ──
-    const fmtDateHeader = iso => {
+    // ── Aplicar estilo a celda ──
+    function sc(cell, font, fill, alignment, borderColor) {
+      cell.font      = font;
+      cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: fill } };
+      cell.alignment = alignment;
+      cell.border    = border(borderColor || C.creamDark);
+    }
+
+    // ── Formato fecha ──
+    const fmtDate = iso => {
       const d = new Date(iso + 'T12:00:00');
       const wd  = d.toLocaleDateString('es-CL', { weekday: 'short' });
       const day = d.toLocaleDateString('es-CL', { day: 'numeric', month: 'short' });
       return wd.charAt(0).toUpperCase() + wd.slice(1) + '\n' + day;
     };
 
-    // ── Calcular máx entradas por día ──
-    const maxEntries = Math.max(...allDates.map(d => (data[d] || []).length), 1);
+    let rowNum = 1;
 
-    // ── Construir datos como array de arrays ──
-    const aoa = [];
+    // ── Fila 1: encabezados ──
+    ws.getRow(rowNum).height = 36;
+    const hRow = ws.getRow(rowNum);
+    sc(hRow.getCell(1),
+      { bold: true, color: { argb: C.white }, size: 11 }, C.brownDark,
+      { vertical: 'middle', horizontal: 'center' });
+    allDates.forEach((d, j) => {
+      const c = hRow.getCell(j + 2);
+      c.value = fmtDate(d);
+      sc(c, { bold: true, color: { argb: C.white }, size: 11 }, C.brownDark,
+        { wrapText: true, vertical: 'middle', horizontal: 'center' });
+    });
+    rowNum++;
 
-    // Fila 0: encabezados
-    aoa.push(['', ...allDates.map(fmtDateHeader)]);
-
-    // Filas de entradas
+    // ── Filas de entradas ──
     for (let i = 0; i < maxEntries; i++) {
-      const row = [`Entrada ${i + 1}`];
-      allDates.forEach(d => {
-        const entries = (data[d] || []).slice().sort((a,b) => (a.ts||0)-(b.ts||0));
-        const e = entries[i];
+      const alt = (i % 2 === 0);
+      const fillText  = alt ? C.accentPale : C.white;
+      const fillLabel = alt ? C.creamDark  : C.cream;
+      const hasPhoto  = allDates.some(d => sorted[d][i]?.photo);
+
+      // Fila de texto
+      ws.getRow(rowNum).height = 55;
+      const tRow = ws.getRow(rowNum);
+      const lc = tRow.getCell(1);
+      lc.value = `Entrada ${i + 1}`;
+      sc(lc, { bold: true, color: { argb: C.brownMid }, size: 10 }, fillLabel,
+        { vertical: 'top', horizontal: 'center' });
+
+      allDates.forEach((d, j) => {
+        const e  = sorted[d][i];
+        const cc = tRow.getCell(j + 2);
         if (e) {
           const mood = e.mood ? e.mood + '  ' : '';
           const time = e.time ? e.time + '\n' : '';
           const cat  = e.categoria ? '[' + e.categoria + ']\n' : '';
-          row.push(mood + time + cat + (e.text || '').trim());
-        } else {
-          row.push('');
+          cc.value = mood + time + cat + (e.text || '').trim();
         }
+        sc(cc, { color: { argb: C.brownDark }, size: 10 }, fillText,
+          { wrapText: true, vertical: 'top' });
       });
-      aoa.push(row);
+      rowNum++;
+
+      // Fila de fotos (solo si hay alguna en este slot)
+      if (hasPhoto) {
+        ws.getRow(rowNum).height = 90;
+        const pRow = ws.getRow(rowNum);
+        const plc = pRow.getCell(1);
+        plc.value = '📷';
+        sc(plc, { color: { argb: C.brownLight }, size: 10 }, fillLabel,
+          { vertical: 'middle', horizontal: 'center' });
+
+        allDates.forEach((d, j) => {
+          const e  = sorted[d][i];
+          const cc = pRow.getCell(j + 2);
+          sc(cc, { color: { argb: C.brownDark }, size: 10 }, fillText,
+            { vertical: 'top' });
+
+          if (e?.photo) {
+            try {
+              const m = e.photo.match(/^data:image\/(jpeg|jpg|png|gif|webp);base64,(.+)$/);
+              if (m) {
+                const ext    = m[1] === 'jpg' ? 'jpeg' : m[1];
+                const imgId  = wb.addImage({ base64: m[2], extension: ext });
+                // tl/br son 0-indexed en ExcelJS
+                ws.addImage(imgId, {
+                  tl: { col: j + 1, row: rowNum - 1 },
+                  ext: { width: 110, height: 82 },
+                  editAs: 'oneCell',
+                });
+              }
+            } catch(_) { cc.value = '📷'; }
+          }
+        });
+        rowNum++;
+      }
     }
 
-    // Fila de feedback del coach
-    const feedbackRow = ['Feedback coach'];
-    allDates.forEach(d => { feedbackRow.push(coachFeedback[d] || ''); });
-    aoa.push(feedbackRow);
+    // ── Feedback coach ──
+    ws.getRow(rowNum).height = 48;
+    const fbRow = ws.getRow(rowNum);
+    sc(fbRow.getCell(1),
+      { bold: true, italic: true, color: { argb: C.brownMid }, size: 10 }, C.feedbackBg,
+      { vertical: 'top', horizontal: 'center' });
+    fbRow.getCell(1).value = 'Feedback coach';
+    allDates.forEach((d, j) => {
+      const cc = fbRow.getCell(j + 2);
+      cc.value = coachFeedback[d] || '';
+      sc(cc, { italic: true, color: { argb: C.brownMid }, size: 10 }, C.feedbackBg,
+        { wrapText: true, vertical: 'top' });
+    });
+    rowNum++;
 
-    // Separador
-    aoa.push(new Array(allDates.length + 1).fill(''));
+    // ── Separador ──
+    ws.getRow(rowNum).height = 6;
+    rowNum++;
 
-    // Fila de estrella (notas privadas — marcadas como importantes)
-    const starRow = ['⭐ Destacada'];
-    allDates.forEach(d => { starRow.push(adminNotes[d]?.starred ? '⭐' : ''); });
-    aoa.push(starRow);
+    // ── Estrella ──
+    ws.getRow(rowNum).height = 28;
+    const stRow = ws.getRow(rowNum);
+    sc(stRow.getCell(1),
+      { bold: true, color: { argb: C.purple }, size: 10 }, C.starPale,
+      { vertical: 'middle', horizontal: 'center' });
+    stRow.getCell(1).value = '⭐ Destacada';
+    allDates.forEach((d, j) => {
+      const cc = stRow.getCell(j + 2);
+      cc.value = adminNotes[d]?.starred ? '⭐' : '';
+      sc(cc, { color: { argb: C.purple }, size: 14 }, C.starPale,
+        { vertical: 'middle', horizontal: 'center' });
+    });
+    rowNum++;
 
-    // Fila de nota privada
-    const privateNoteRow = ['🔒 Nota privada'];
-    allDates.forEach(d => { privateNoteRow.push(adminNotes[d]?.note || ''); });
-    aoa.push(privateNoteRow);
+    // ── Nota privada ──
+    ws.getRow(rowNum).height = 56;
+    const pvRow = ws.getRow(rowNum);
+    sc(pvRow.getCell(1),
+      { bold: true, italic: true, color: { argb: C.purple }, size: 10 }, C.purplePale,
+      { vertical: 'top', horizontal: 'center' });
+    pvRow.getCell(1).value = '🔒 Nota privada';
+    allDates.forEach((d, j) => {
+      const cc = pvRow.getCell(j + 2);
+      cc.value = adminNotes[d]?.note || '';
+      sc(cc, { italic: true, color: { argb: C.purpleDark }, size: 10 }, C.purplePale,
+        { wrapText: true, vertical: 'top' });
+    });
 
-    // ── Crear worksheet ──
-    const ws = XLSX.utils.aoa_to_sheet(aoa);
-
-    // ── Anchos de columnas ──
-    ws['!cols'] = [{ wch: 11 }, ...allDates.map(() => ({ wch: 30 }))];
-
-    // ── Fijar primera fila y primera columna ──
-    ws['!freeze'] = { xSplit: 1, ySplit: 1, topLeftCell: 'B2', state: 'frozen' };
-
-    // ── Estilos para notas privadas ──
-    const sStarLabel = {
-      font:      { bold: true, color: { rgb: '7C5C9E' }, sz: 10 },
-      fill:      { fgColor: { rgb: 'F0E8F8' } },
-      alignment: { vertical: 'top', horizontal: 'center' },
-      border:    allBorders,
-    };
-    const sStarCell = {
-      font:      { color: { rgb: '7C5C9E' }, sz: 14 },
-      fill:      { fgColor: { rgb: 'F0E8F8' } },
-      alignment: { vertical: 'center', horizontal: 'center' },
-      border:    allBorders,
-    };
-    const sPrivateLabel = {
-      font:      { bold: true, italic: true, color: { rgb: '7C5C9E' }, sz: 10 },
-      fill:      { fgColor: { rgb: 'EDE0F8' } },
-      alignment: { vertical: 'top', horizontal: 'center' },
-      border:    allBorders,
-    };
-    const sPrivateCell = {
-      font:      { italic: true, color: { rgb: '5E4478' }, sz: 10 },
-      fill:      { fgColor: { rgb: 'EDE0F8' } },
-      alignment: wrap,
-      border:    allBorders,
-    };
-
-    // ── Altura de filas ──
-    const rowHeights = [{ hpt: 36 }];  // header
-    for (let i = 0; i < maxEntries; i++) rowHeights.push({ hpt: 60 });
-    rowHeights.push({ hpt: 48 });  // feedback
-    rowHeights.push({ hpt: 6 });   // separador
-    rowHeights.push({ hpt: 28 });  // estrella
-    rowHeights.push({ hpt: 56 });  // nota privada
-    ws['!rows'] = rowHeights;
-
-    // ── Aplicar estilos celda por celda ──
-    const R_HEADER        = 0;
-    const R_ENTRIES_START = 1;
-    const R_ENTRIES_END   = maxEntries;
-    const R_FEEDBACK = maxEntries + 1;
-    const R_SEP      = maxEntries + 2;
-    const R_STAR     = maxEntries + 3;
-    const R_PRIVATE  = maxEntries + 4;
-    const totalCols  = allDates.length + 1;
-
-    function setStyle(r, c, s) {
-      const addr = XLSX.utils.encode_cell({ r, c });
-      if (!ws[addr]) ws[addr] = { t: 's', v: '' };
-      ws[addr].s = s;
-    }
-
-    // Header row
-    setStyle(R_HEADER, 0, sHeaderLabel);
-    for (let c = 1; c < totalCols; c++) setStyle(R_HEADER, c, sHeader);
-
-    // Entry rows
-    for (let r = R_ENTRIES_START; r <= R_ENTRIES_END; r++) {
-      const alt = (r % 2 === 0);
-      setStyle(r, 0, sRowLabel(alt));
-      for (let c = 1; c < totalCols; c++) setStyle(r, c, sCell(alt));
-    }
-
-    // Feedback row
-    setStyle(R_FEEDBACK, 0, sFeedbackLabel);
-    for (let c = 1; c < totalCols; c++) setStyle(R_FEEDBACK, c, sFeedbackCell);
-
-    // Star row
-    setStyle(R_STAR, 0, sStarLabel);
-    for (let c = 1; c < totalCols; c++) setStyle(R_STAR, c, sStarCell);
-
-    // Private note row
-    setStyle(R_PRIVATE, 0, sPrivateLabel);
-    for (let c = 1; c < totalCols; c++) setStyle(R_PRIVATE, c, sPrivateCell);
-
-    // ── Crear workbook y descargar ──
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Diario');
-
+    // ── Descargar ──
     const clientName = document.getElementById('export-email-input').selectedOptions[0]
       ?.textContent?.split('(')[0]?.trim() || email;
     const fileName = `Diario_${clientName.replace(/\s+/g,'_')}_${dateFrom}_${dateTo}.xlsx`;
-    XLSX.writeFile(wb, fileName);
 
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob   = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url    = URL.createObjectURL(blob);
+    const a      = document.createElement('a');
+    a.href = url; a.download = fileName;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    const totalEntries = allDates.reduce((sum, d) => sum + sorted[d].length, 0);
     fbEl.className = 'feedback success'; fbEl.style.display = 'block';
-    const totalEntries = allDates.reduce((sum, d) => sum + (data[d] || []).length, 0);
     fbEl.textContent = `✅ Excel descargado: ${allDates.length} día${allDates.length!==1?'s':''} · ${totalEntries} entrada${totalEntries!==1?'s':''} en total.`;
+
   } catch (e) {
+    console.error(e);
     fbEl.className = 'feedback error'; fbEl.style.display = 'block';
     fbEl.textContent = '❌ Error: ' + e.message;
   } finally {
