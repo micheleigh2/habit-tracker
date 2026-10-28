@@ -2249,6 +2249,18 @@ async function viewPeriodGrid(btn) {
   }
 }
 
+// Carga ExcelJS solo cuando se necesita (no afecta al resto de la página)
+function _loadExcelJS() {
+  if (window.ExcelJS) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('No se pudo cargar ExcelJS. Verificá tu conexión.'));
+    document.head.appendChild(s);
+  });
+}
+
 async function exportDiarioExcel(btn) {
   const email    = document.getElementById('export-email-input').value.trim().toLowerCase();
   const dateFrom = document.getElementById('export-date-from').value;
@@ -2257,167 +2269,213 @@ async function exportDiarioExcel(btn) {
 
   fbEl.className = 'feedback'; fbEl.style.display = 'none'; fbEl.innerHTML = '';
 
-  if (!email)    { fbEl.className='feedback error'; fbEl.textContent='⚠️ Selecciona una clienta.'; return; }
-  if (!dateFrom || !dateTo) { fbEl.className='feedback error'; fbEl.textContent='⚠️ Selecciona un rango de fechas.'; return; }
-  if (dateFrom > dateTo)    { fbEl.className='feedback error'; fbEl.textContent='⚠️ La fecha "desde" debe ser anterior a "hasta".'; return; }
+  if (!email)    { fbEl.className='feedback error'; fbEl.style.display='block'; fbEl.textContent='⚠️ Selecciona una clienta.'; return; }
+  if (!dateFrom || !dateTo) { fbEl.className='feedback error'; fbEl.style.display='block'; fbEl.textContent='⚠️ Selecciona un rango de fechas.'; return; }
+  if (dateFrom > dateTo)    { fbEl.className='feedback error'; fbEl.style.display='block'; fbEl.textContent='⚠️ La fecha "desde" debe ser anterior a "hasta".'; return; }
 
-  btn.disabled = true; btn.textContent = 'Generando Excel...';
+  btn.disabled = true; btn.textContent = 'Preparando...';
 
   try {
+    // Cargar ExcelJS dinámicamente (solo la primera vez)
+    await _loadExcelJS();
+    btn.textContent = 'Generando Excel...';
+
     // ── Cargar datos ──
     const docId   = adminEmailToDocId(email);
     const dSnap   = await db.collection('diario').doc(docId).get();
     const dData   = dSnap.exists ? (dSnap.data() || {}) : {};
-    const coachFeedback = dData.coachFeedback || {};
+    const coachFB = dData.coachFeedback || {};
     const hSnap   = await db.collection('habitos').doc(docId).get();
-    const adminNotes = hSnap.exists ? (hSnap.data()._adminNotes || {}) : {};
+    const aNotes  = hSnap.exists ? (hSnap.data()._adminNotes || {}) : {};
 
     // ── Todos los días del rango ──
     const allDates = [];
     const cur = new Date(dateFrom + 'T12:00:00');
     const fin = new Date(dateTo   + 'T12:00:00');
-    while (cur <= fin) {
-      allDates.push(cur.toISOString().slice(0, 10));
-      cur.setDate(cur.getDate() + 1);
+    while (cur <= fin) { allDates.push(cur.toISOString().slice(0,10)); cur.setDate(cur.getDate()+1); }
+
+    const hasAny = allDates.some(d => (dData[d]||[]).length > 0);
+    if (!hasAny) {
+      fbEl.className='feedback warning'; fbEl.style.display='block';
+      fbEl.textContent='⚠️ No hay entradas en ese rango de fechas.'; return;
     }
 
-    const hasAnyData = allDates.some(d => (dData[d] || []).length > 0);
-    if (!hasAnyData) {
-      fbEl.className = 'feedback warning'; fbEl.style.display = 'block';
-      fbEl.textContent = '⚠️ No hay entradas en ese rango de fechas.';
-      return;
+    // ── Pre-ordenar ──
+    const srt = {};
+    allDates.forEach(d => { srt[d] = (dData[d]||[]).slice().sort((a,b)=>(a.ts||0)-(b.ts||0)); });
+    const maxEnt = Math.max(...allDates.map(d => srt[d].length), 1);
+
+    // ── Workbook ExcelJS ──
+    const ejWb = new ExcelJS.Workbook();
+    ejWb.creator = 'Revolución Saludable Admin';
+    const ejWs = ejWb.addWorksheet('Diario');
+
+    ejWs.columns = [{ width: 12 }, ...allDates.map(() => ({ width: 28 }))];
+    ejWs.views = [{ state:'frozen', xSplit:1, ySplit:1, topLeftCell:'B2', activeCell:'B2' }];
+
+    // Colores ARGB
+    const EC = {
+      brownDark: 'FF3F2417', brownMid: 'FF625347', brownLight: 'FF9A8070',
+      cream: 'FFF8E8D7', creamDark: 'FFE8D3BC', white: 'FFFFF8F0',
+      accentPale: 'FFF5ECE5', feedbackBg: 'FFFFF3E8',
+      purple: 'FF7C5C9E', purpleDark: 'FF5E4478', purplePale: 'FFEDE0F8', starPale: 'FFF0E8F8',
+    };
+    const eBdr = c => ({ top:{style:'thin',color:{argb:c}}, bottom:{style:'thin',color:{argb:c}},
+                          left:{style:'thin',color:{argb:c}}, right:{style:'thin',color:{argb:c}} });
+
+    function eStyle(cell, font, fillArgb, alignment) {
+      cell.font      = font;
+      cell.fill      = { type:'pattern', pattern:'solid', fgColor:{ argb: fillArgb } };
+      cell.alignment = alignment;
+      cell.border    = eBdr(EC.creamDark);
     }
 
-    // ── Pre-ordenar entradas ──
-    const sorted = {};
-    allDates.forEach(d => {
-      sorted[d] = (dData[d] || []).slice().sort((a,b) => (a.ts||0)-(b.ts||0));
+    const fmtDH = iso => {
+      const d = new Date(iso+'T12:00:00');
+      const wd = d.toLocaleDateString('es-CL',{weekday:'short'});
+      const dy = d.toLocaleDateString('es-CL',{day:'numeric',month:'short'});
+      return wd.charAt(0).toUpperCase()+wd.slice(1)+'\n'+dy;
+    };
+
+    let rn = 1; // row number (1-indexed)
+
+    // ── Encabezados ──
+    ejWs.getRow(rn).height = 36;
+    eStyle(ejWs.getRow(rn).getCell(1),
+      {bold:true,color:{argb:EC.white},size:11}, EC.brownDark,
+      {vertical:'middle',horizontal:'center'});
+    allDates.forEach((d,j) => {
+      const c = ejWs.getRow(rn).getCell(j+2);
+      c.value = fmtDH(d);
+      eStyle(c, {bold:true,color:{argb:EC.white},size:11}, EC.brownDark,
+        {wrapText:true,vertical:'middle',horizontal:'center'});
     });
-    const maxEnt = Math.max(...allDates.map(d => sorted[d].length), 1);
+    rn++;
 
-    // ── Paleta ──
-    const C = {
-      brownDark:  '3F2417', brownMid: '625347', brownLight: '9A8070',
-      cream:      'F8E8D7', creamDark: 'E8D3BC', white: 'FFF8F0',
-      accentPale: 'F5ECE5', feedbackBg: 'FFF3E8',
-      purple: '7C5C9E', purpleDark: '5E4478', purplePale: 'EDE0F8', starPale: 'F0E8F8',
-    };
-    const bdr = { top: {style:'thin',color:{rgb:C.creamDark}}, bottom: {style:'thin',color:{rgb:C.creamDark}},
-                  left:{style:'thin',color:{rgb:C.creamDark}}, right: {style:'thin',color:{rgb:C.creamDark}} };
-
-    const fmtDate = iso => {
-      const d  = new Date(iso + 'T12:00:00');
-      const wd = d.toLocaleDateString('es-CL', { weekday: 'short' });
-      const dy = d.toLocaleDateString('es-CL', { day: 'numeric', month: 'short' });
-      return wd.charAt(0).toUpperCase() + wd.slice(1) + '\n' + dy;
-    };
-
-    // ── Construir AOA ──
-    const aoa = [];
-
-    // Fila 0: encabezados
-    aoa.push(['', ...allDates.map(fmtDate)]);
-
-    // Filas de entradas
+    // ── Filas de entradas ──
     for (let i = 0; i < maxEnt; i++) {
-      const row = [`Entrada ${i + 1}`];
-      allDates.forEach(d => {
-        const e = sorted[d][i];
+      const alt       = i % 2 === 0;
+      const fillTxt   = alt ? EC.accentPale : EC.white;
+      const fillLbl   = alt ? EC.creamDark  : EC.cream;
+      const hasPhoto  = allDates.some(d => srt[d][i]?.photo);
+
+      // Fila texto
+      ejWs.getRow(rn).height = 55;
+      const tLbl = ejWs.getRow(rn).getCell(1);
+      tLbl.value = `Entrada ${i+1}`;
+      eStyle(tLbl, {bold:true,color:{argb:EC.brownMid},size:10}, fillLbl,
+        {vertical:'top',horizontal:'center'});
+
+      allDates.forEach((d,j) => {
+        const e  = srt[d][i];
+        const cc = ejWs.getRow(rn).getCell(j+2);
         if (e) {
-          const mood = e.mood   ? e.mood + '  '              : '';
-          const time = e.time   ? e.time + '\n'              : '';
-          const cat  = e.categoria ? '[' + e.categoria + ']\n' : '';
-          const foto = e.photo  ? '\n📷 foto'                : '';
-          row.push(mood + time + cat + (e.text || '').trim() + foto);
-        } else {
-          row.push('');
+          const mood = e.mood      ? e.mood+'  '           : '';
+          const time = e.time      ? e.time+'\n'           : '';
+          const cat  = e.categoria ? '['+e.categoria+']\n' : '';
+          cc.value = mood+time+cat+(e.text||'').trim();
         }
+        eStyle(cc, {color:{argb:EC.brownDark},size:10}, fillTxt,
+          {wrapText:true,vertical:'top'});
       });
-      aoa.push(row);
+      rn++;
+
+      // Fila fotos (solo si alguna entrada en este slot tiene foto)
+      if (hasPhoto) {
+        ejWs.getRow(rn).height = 92;
+        const pLbl = ejWs.getRow(rn).getCell(1);
+        pLbl.value = '📷';
+        eStyle(pLbl, {color:{argb:EC.brownLight},size:10}, fillLbl,
+          {vertical:'middle',horizontal:'center'});
+
+        allDates.forEach((d,j) => {
+          const e  = srt[d][i];
+          const cc = ejWs.getRow(rn).getCell(j+2);
+          eStyle(cc, {color:{argb:EC.brownDark},size:10}, fillTxt, {vertical:'top'});
+          if (e?.photo) {
+            try {
+              const m = e.photo.match(/^data:image\/(jpeg|jpg|png|gif|webp);base64,(.+)$/);
+              if (m) {
+                const ext   = m[1]==='jpg'?'jpeg':m[1];
+                const imgId = ejWb.addImage({ base64: m[2], extension: ext });
+                ejWs.addImage(imgId, {
+                  tl: { col: j+1, row: rn-1 }, // 0-indexed
+                  ext: { width: 110, height: 82 },
+                  editAs: 'oneCell',
+                });
+              }
+            } catch(_) { cc.value = '📷'; }
+          }
+        });
+        rn++;
+      }
     }
 
-    // Fila feedback
-    const fbRow2 = ['Feedback coach'];
-    allDates.forEach(d => fbRow2.push(coachFeedback[d] || ''));
-    aoa.push(fbRow2);
+    // ── Feedback coach ──
+    ejWs.getRow(rn).height = 48;
+    const fbR = ejWs.getRow(rn);
+    fbR.getCell(1).value = 'Feedback coach';
+    eStyle(fbR.getCell(1), {bold:true,italic:true,color:{argb:EC.brownMid},size:10},
+      EC.feedbackBg, {vertical:'top',horizontal:'center'});
+    allDates.forEach((d,j) => {
+      const cc = fbR.getCell(j+2);
+      cc.value = coachFB[d] || '';
+      eStyle(cc, {italic:true,color:{argb:EC.brownMid},size:10}, EC.feedbackBg,
+        {wrapText:true,vertical:'top'});
+    });
+    rn++;
 
-    // Separador
-    aoa.push(new Array(allDates.length + 1).fill(''));
+    // ── Separador ──
+    ejWs.getRow(rn).height = 6; rn++;
 
-    // Estrella
-    const starRow = ['⭐ Destacada'];
-    allDates.forEach(d => starRow.push(adminNotes[d]?.starred ? '⭐' : ''));
-    aoa.push(starRow);
+    // ── Estrella ──
+    ejWs.getRow(rn).height = 28;
+    const stR = ejWs.getRow(rn);
+    stR.getCell(1).value = '⭐ Destacada';
+    eStyle(stR.getCell(1), {bold:true,color:{argb:EC.purple},size:10},
+      EC.starPale, {vertical:'middle',horizontal:'center'});
+    allDates.forEach((d,j) => {
+      const cc = stR.getCell(j+2);
+      cc.value = aNotes[d]?.starred ? '⭐' : '';
+      eStyle(cc, {color:{argb:EC.purple},size:14}, EC.starPale,
+        {vertical:'middle',horizontal:'center'});
+    });
+    rn++;
 
-    // Nota privada
-    const privRow = ['🔒 Nota privada'];
-    allDates.forEach(d => privRow.push(adminNotes[d]?.note || ''));
-    aoa.push(privRow);
-
-    // ── Worksheet ──
-    const ws2 = XLSX.utils.aoa_to_sheet(aoa);
-    ws2['!cols']   = [{ wch: 11 }, ...allDates.map(() => ({ wch: 30 }))];
-    ws2['!freeze'] = { xSplit: 1, ySplit: 1, topLeftCell: 'B2', state: 'frozen' };
-
-    // Alturas
-    const rh = [{ hpt: 36 }];
-    for (let i = 0; i < maxEnt; i++) rh.push({ hpt: 70 });
-    rh.push({ hpt: 48 }, { hpt: 6 }, { hpt: 28 }, { hpt: 56 });
-    ws2['!rows'] = rh;
-
-    // Estilos
-    const totalCols = allDates.length + 1;
-    function ss(r, c, s) {
-      const addr = XLSX.utils.encode_cell({ r, c });
-      if (!ws2[addr]) ws2[addr] = { t: 's', v: '' };
-      ws2[addr].s = s;
-    }
-    const sHdr  = { font:{bold:true,color:{rgb:C.white},sz:11},  fill:{fgColor:{rgb:C.brownDark}}, alignment:{wrapText:true,vertical:'middle',horizontal:'center'}, border:bdr };
-    const sHdrL = { font:{bold:true,color:{rgb:C.white},sz:11},  fill:{fgColor:{rgb:C.brownDark}}, alignment:{vertical:'middle',horizontal:'center'}, border:bdr };
-    const sLbl  = alt => ({ font:{bold:true,color:{rgb:C.brownMid},sz:10},  fill:{fgColor:{rgb:alt?C.creamDark:C.cream}},    alignment:{vertical:'top',horizontal:'center'}, border:bdr });
-    const sCel  = alt => ({ font:{color:{rgb:C.brownDark},sz:10},            fill:{fgColor:{rgb:alt?C.accentPale:C.white}},   alignment:{wrapText:true,vertical:'top'},       border:bdr });
-    const sFbL  = { font:{bold:true,italic:true,color:{rgb:C.brownMid},sz:10}, fill:{fgColor:{rgb:C.feedbackBg}}, alignment:{vertical:'top',horizontal:'center'}, border:bdr };
-    const sFbC  = { font:{italic:true,color:{rgb:C.brownMid},sz:10},           fill:{fgColor:{rgb:C.feedbackBg}}, alignment:{wrapText:true,vertical:'top'},       border:bdr };
-    const sStL  = { font:{bold:true,color:{rgb:C.purple},sz:10},   fill:{fgColor:{rgb:C.starPale}},   alignment:{vertical:'middle',horizontal:'center'}, border:bdr };
-    const sStC  = { font:{color:{rgb:C.purple},sz:14},              fill:{fgColor:{rgb:C.starPale}},   alignment:{vertical:'middle',horizontal:'center'}, border:bdr };
-    const sPvL  = { font:{bold:true,italic:true,color:{rgb:C.purple},sz:10},    fill:{fgColor:{rgb:C.purplePale}}, alignment:{vertical:'top',horizontal:'center'}, border:bdr };
-    const sPvC  = { font:{italic:true,color:{rgb:C.purpleDark},sz:10},           fill:{fgColor:{rgb:C.purplePale}}, alignment:{wrapText:true,vertical:'top'},       border:bdr };
-
-    // Row 0: header
-    ss(0, 0, sHdrL);
-    for (let c = 1; c < totalCols; c++) ss(0, c, sHdr);
-    // Entry rows
-    for (let i = 0; i < maxEnt; i++) {
-      const alt = i % 2 === 0;
-      ss(i+1, 0, sLbl(alt));
-      for (let c = 1; c < totalCols; c++) ss(i+1, c, sCel(alt));
-    }
-    // Feedback
-    ss(maxEnt+1, 0, sFbL);
-    for (let c = 1; c < totalCols; c++) ss(maxEnt+1, c, sFbC);
-    // Star
-    ss(maxEnt+3, 0, sStL);
-    for (let c = 1; c < totalCols; c++) ss(maxEnt+3, c, sStC);
-    // Private
-    ss(maxEnt+4, 0, sPvL);
-    for (let c = 1; c < totalCols; c++) ss(maxEnt+4, c, sPvC);
+    // ── Nota privada ──
+    ejWs.getRow(rn).height = 56;
+    const pvR = ejWs.getRow(rn);
+    pvR.getCell(1).value = '🔒 Nota privada';
+    eStyle(pvR.getCell(1), {bold:true,italic:true,color:{argb:EC.purple},size:10},
+      EC.purplePale, {vertical:'top',horizontal:'center'});
+    allDates.forEach((d,j) => {
+      const cc = pvR.getCell(j+2);
+      cc.value = aNotes[d]?.note || '';
+      eStyle(cc, {italic:true,color:{argb:EC.purpleDark},size:10}, EC.purplePale,
+        {wrapText:true,vertical:'top'});
+    });
 
     // ── Descargar ──
-    const wb2 = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb2, ws2, 'Diario');
     const clientName = document.getElementById('export-email-input').selectedOptions[0]
       ?.textContent?.split('(')[0]?.trim() || email;
     const fileName = `Diario_${clientName.replace(/\s+/g,'_')}_${dateFrom}_${dateTo}.xlsx`;
-    XLSX.writeFile(wb2, fileName);
+    const ejBuf  = await ejWb.xlsx.writeBuffer();
+    const ejBlob = new Blob([ejBuf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const ejUrl  = URL.createObjectURL(ejBlob);
+    const ejA    = document.createElement('a');
+    ejA.href = ejUrl; ejA.download = fileName;
+    document.body.appendChild(ejA); ejA.click();
+    document.body.removeChild(ejA);
+    URL.revokeObjectURL(ejUrl);
 
-    const totalEntries = allDates.reduce((sum, d) => sum + sorted[d].length, 0);
-    fbEl.className = 'feedback success'; fbEl.style.display = 'block';
-    fbEl.textContent = `✅ Excel descargado: ${allDates.length} día${allDates.length!==1?'s':''} · ${totalEntries} entrada${totalEntries!==1?'s':''} en total.`;
+    const totalEnt = allDates.reduce((s,d) => s+srt[d].length, 0);
+    fbEl.className='feedback success'; fbEl.style.display='block';
+    fbEl.textContent=`✅ Excel descargado: ${allDates.length} día${allDates.length!==1?'s':''} · ${totalEnt} entrada${totalEnt!==1?'s':''} en total.`;
 
-  } catch (e) {
-    console.error(e);
-    fbEl.className = 'feedback error'; fbEl.style.display = 'block';
-    fbEl.textContent = '❌ Error: ' + e.message;
+  } catch (ejErr) {
+    console.error(ejErr);
+    fbEl.className='feedback error'; fbEl.style.display='block';
+    fbEl.textContent='❌ Error: ' + ejErr.message;
   } finally {
     btn.disabled = false; btn.textContent = '⬇ Descargar Excel';
   }
