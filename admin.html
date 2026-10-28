@@ -2250,26 +2250,16 @@ async function exportDiarioExcel(btn) {
         const entries = (data[d] || []).slice().sort((a,b) => (a.ts||0)-(b.ts||0));
         const e = entries[i];
         if (e) {
+          const mood = e.mood ? e.mood + '  ' : '';
           const time = e.time ? e.time + '\n' : '';
           const cat  = e.categoria ? '[' + e.categoria + ']\n' : '';
-          row.push(time + cat + (e.text || '').trim());
+          row.push(mood + time + cat + (e.text || '').trim());
         } else {
           row.push('');
         }
       });
       aoa.push(row);
     }
-
-    // Fila vacía separadora
-    aoa.push(new Array(allDates.length + 1).fill(''));
-
-    // Fila de emociones
-    const moodRow = ['Emociones'];
-    allDates.forEach(d => {
-      const entries = (data[d] || []).slice().sort((a,b) => (a.ts||0)-(b.ts||0));
-      moodRow.push(entries.map(e => e.mood || '').filter(Boolean).join('  ') || '—');
-    });
-    aoa.push(moodRow);
 
     // Fila de feedback del coach
     const feedbackRow = ['Feedback coach'];
@@ -2327,10 +2317,8 @@ async function exportDiarioExcel(btn) {
     // ── Altura de filas ──
     const rowHeights = [{ hpt: 36 }];  // header
     for (let i = 0; i < maxEntries; i++) rowHeights.push({ hpt: 60 });
-    rowHeights.push({ hpt: 6 });   // separador 1
-    rowHeights.push({ hpt: 32 });  // emociones
     rowHeights.push({ hpt: 48 });  // feedback
-    rowHeights.push({ hpt: 6 });   // separador 2
+    rowHeights.push({ hpt: 6 });   // separador
     rowHeights.push({ hpt: 28 });  // estrella
     rowHeights.push({ hpt: 56 });  // nota privada
     ws['!rows'] = rowHeights;
@@ -2339,12 +2327,10 @@ async function exportDiarioExcel(btn) {
     const R_HEADER        = 0;
     const R_ENTRIES_START = 1;
     const R_ENTRIES_END   = maxEntries;
-    const R_SEP1     = maxEntries + 1;
-    const R_MOOD     = maxEntries + 2;
-    const R_FEEDBACK = maxEntries + 3;
-    const R_SEP2     = maxEntries + 4;
-    const R_STAR     = maxEntries + 5;
-    const R_PRIVATE  = maxEntries + 6;
+    const R_FEEDBACK = maxEntries + 1;
+    const R_SEP      = maxEntries + 2;
+    const R_STAR     = maxEntries + 3;
+    const R_PRIVATE  = maxEntries + 4;
     const totalCols  = allDates.length + 1;
 
     function setStyle(r, c, s) {
@@ -2363,10 +2349,6 @@ async function exportDiarioExcel(btn) {
       setStyle(r, 0, sRowLabel(alt));
       for (let c = 1; c < totalCols; c++) setStyle(r, c, sCell(alt));
     }
-
-    // Mood row
-    setStyle(R_MOOD, 0, sMoodLabel);
-    for (let c = 1; c < totalCols; c++) setStyle(R_MOOD, c, sMoodCell);
 
     // Feedback row
     setStyle(R_FEEDBACK, 0, sFeedbackLabel);
@@ -2390,7 +2372,8 @@ async function exportDiarioExcel(btn) {
     XLSX.writeFile(wb, fileName);
 
     fbEl.className = 'feedback success'; fbEl.style.display = 'block';
-    fbEl.textContent = `✅ Excel descargado: ${allDates.length} día${allDates.length!==1?'s':''}, ${maxEntries} entrada${maxEntries!==1?'s':''} por día máx.`;
+    const totalEntries = allDates.reduce((sum, d) => sum + (data[d] || []).length, 0);
+    fbEl.textContent = `✅ Excel descargado: ${allDates.length} día${allDates.length!==1?'s':''} · ${totalEntries} entrada${totalEntries!==1?'s':''} en total.`;
   } catch (e) {
     fbEl.className = 'feedback error'; fbEl.style.display = 'block';
     fbEl.textContent = '❌ Error: ' + e.message;
