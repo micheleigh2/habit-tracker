@@ -261,6 +261,38 @@
   .feedback-saved-msg { font-size: 0.75rem; color: var(--green); margin-left: 10px; opacity: 0; transition: opacity 0.3s; }
   .feedback-saved-msg.show { opacity: 1; }
 
+  /* ══ GRILLA PERÍODO ══ */
+  .period-table { border-collapse: collapse; font-size: 0.82rem; min-width: 100%; }
+  .period-table th {
+    background: var(--brown-dark); color: #fff; padding: 8px 10px;
+    text-align: center; white-space: nowrap; font-size: 0.78rem;
+    font-weight: 600; letter-spacing: 0.3px; min-width: 160px;
+    position: sticky; top: 0; z-index: 2;
+  }
+  .period-table th:first-child { min-width: 80px; position: sticky; left: 0; z-index: 3; }
+  .period-table td {
+    border: 1px solid var(--border); padding: 8px 10px;
+    vertical-align: top; min-width: 160px; max-width: 200px;
+  }
+  .period-table td:first-child {
+    background: var(--cream); font-weight: 600; font-size: 0.75rem;
+    color: var(--brown-mid); text-align: center; white-space: nowrap;
+    position: sticky; left: 0; z-index: 1;
+  }
+  .period-table tr:nth-child(odd)  td { background: #fffaf6; }
+  .period-table tr:nth-child(even) td { background: #f5ede4; }
+  .period-table tr:nth-child(odd)  td:first-child,
+  .period-table tr:nth-child(even) td:first-child { background: var(--cream); }
+  .pg-entry { margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px dashed var(--border); }
+  .pg-entry:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+  .pg-time  { font-size: 0.7rem; color: #999; font-weight: 600; }
+  .pg-mood  { font-size: 1.1rem; line-height: 1; }
+  .pg-cat   { font-size: 0.68rem; color: var(--brown-light); text-transform: uppercase; letter-spacing: 0.6px; }
+  .pg-text  { font-size: 0.81rem; color: var(--brown-dark); line-height: 1.45; white-space: pre-wrap; margin: 3px 0; }
+  .pg-photo { margin-top: 5px; }
+  .pg-photo img { width: 100%; max-width: 150px; border-radius: 5px; cursor: zoom-in; display: block; }
+  .pg-empty { color: #ccc; font-size: 0.75rem; text-align: center; padding: 8px 0; }
+
   /* ══ NOTA PRIVADA ADMIN ══ */
   .admin-private-note {
     margin-top: 16px; padding-top: 14px; border-top: 1px solid #e0d0f0;
@@ -387,11 +419,11 @@
     </div>
   </div>
 
-  <!-- Exportar Diario a Excel -->
+  <!-- Vista por período + Exportar Excel -->
   <div class="card">
-    <h2>📥 Exportar diario a Excel</h2>
+    <h2>📅 Historial por período</h2>
     <p style="font-size:0.84rem;color:var(--brown-light);margin-bottom:18px;">
-      Selecciona una clienta y un rango de fechas para descargar su diario alimentario y de deporte. Las fechas van hacia el lado y las entradas hacia abajo.
+      Selecciona una clienta y un rango de fechas para ver su diario completo (con fotos) o descargarlo en Excel.
     </p>
     <div class="form-grid" style="margin-bottom:16px;">
       <div class="field">
@@ -411,8 +443,13 @@
         <input type="date" id="export-date-to" />
       </div>
     </div>
-    <button class="btn-save" id="btn-export" onclick="exportDiarioExcel(this)" style="max-width:280px;">⬇ Descargar Excel</button>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn-save" onclick="viewPeriodGrid(this)" style="max-width:220px;">👁 Ver en pantalla</button>
+      <button class="btn-save" id="btn-export" onclick="exportDiarioExcel(this)" style="max-width:220px;background:var(--brown-mid);">⬇ Descargar Excel</button>
+    </div>
     <div class="feedback" id="export-feedback" style="margin-top:12px;"></div>
+    <!-- Grilla del período -->
+    <div id="period-grid-wrap" style="display:none;margin-top:20px;overflow-x:auto;"></div>
   </div>
 
   <!-- Formulario de precarga -->
@@ -2115,6 +2152,101 @@ function initExportDropdown() {
   const monthAgo = (() => { const d = new Date(); d.setDate(d.getDate()-29); return d.toISOString().slice(0,10); })();
   document.getElementById('export-date-from').value = monthAgo;
   document.getElementById('export-date-to').value   = today;
+}
+
+async function viewPeriodGrid(btn) {
+  const email    = document.getElementById('export-email-input').value.trim().toLowerCase();
+  const dateFrom = document.getElementById('export-date-from').value;
+  const dateTo   = document.getElementById('export-date-to').value;
+  const fbEl     = document.getElementById('export-feedback');
+  const wrap     = document.getElementById('period-grid-wrap');
+
+  fbEl.className = 'feedback'; fbEl.style.display = 'none';
+  wrap.style.display = 'none'; wrap.innerHTML = '';
+
+  if (!email)   { fbEl.className='feedback error'; fbEl.style.display='block'; fbEl.textContent='⚠️ Selecciona una clienta.'; return; }
+  if (!dateFrom || !dateTo) { fbEl.className='feedback error'; fbEl.style.display='block'; fbEl.textContent='⚠️ Selecciona un rango de fechas.'; return; }
+  if (dateFrom > dateTo)    { fbEl.className='feedback error'; fbEl.style.display='block'; fbEl.textContent='⚠️ La fecha "desde" debe ser anterior a "hasta".'; return; }
+
+  btn.disabled = true; btn.textContent = 'Cargando...';
+  try {
+    const docId  = adminEmailToDocId(email);
+    const dSnap  = await db.collection('diario').doc(docId).get();
+    const dData  = dSnap.exists ? (dSnap.data() || {}) : {};
+    const hSnap  = await db.collection('habitos').doc(docId).get();
+    const adminNotes = hSnap.exists ? (hSnap.data()._adminNotes || {}) : {};
+
+    // Generar todos los días
+    const allDates = [];
+    const cur = new Date(dateFrom + 'T12:00:00');
+    const fin = new Date(dateTo   + 'T12:00:00');
+    while (cur <= fin) { allDates.push(cur.toISOString().slice(0,10)); cur.setDate(cur.getDate()+1); }
+
+    const hasAny = allDates.some(d => (dData[d]||[]).length > 0);
+    if (!hasAny) { fbEl.className='feedback warning'; fbEl.style.display='block'; fbEl.textContent='⚠️ No hay entradas en ese rango.'; return; }
+
+    const sorted = {};
+    allDates.forEach(d => { sorted[d] = (dData[d]||[]).slice().sort((a,b)=>(a.ts||0)-(b.ts||0)); });
+    const maxEnt = Math.max(...allDates.map(d => sorted[d].length), 1);
+
+    // Construir tabla
+    const fmtDate = iso => {
+      const d = new Date(iso + 'T12:00:00');
+      return d.toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', month: 'short' });
+    };
+
+    let html = '<table class="period-table"><thead><tr><th></th>';
+    allDates.forEach(d => { html += `<th>${fmtDate(d)}</th>`; });
+    html += '</tr></thead><tbody>';
+
+    for (let i = 0; i < maxEnt; i++) {
+      html += `<tr><td>Entrada ${i+1}</td>`;
+      allDates.forEach(d => {
+        const e = sorted[d][i];
+        if (e) {
+          const mood  = e.mood      ? `<span class="pg-mood">${e.mood}</span> ` : '';
+          const time  = e.time      ? `<span class="pg-time">${e.time}</span>` : '';
+          const cat   = e.categoria ? `<div class="pg-cat">${e.categoria}</div>` : '';
+          const txt   = e.text      ? `<div class="pg-text">${(e.text||'').replace(/</g,'&lt;')}</div>` : '';
+          const photo = e.photo     ? `<div class="pg-photo"><img src="${e.photo}" onclick="openLightbox(this.src)" loading="lazy"></div>` : '';
+          html += `<td><div class="pg-entry">${mood}${time}${cat}${txt}${photo}</div></td>`;
+        } else {
+          html += '<td><span class="pg-empty">—</span></td>';
+        }
+      });
+      html += '</tr>';
+    }
+
+    // Fila de notas privadas (si hay alguna)
+    const hasNotes = allDates.some(d => adminNotes[d]?.note || adminNotes[d]?.starred);
+    if (hasNotes) {
+      html += '<tr><td style="background:#ede0f8!important;color:#7c5c9e;">🔒 Notas</td>';
+      allDates.forEach(d => {
+        const n = adminNotes[d];
+        if (n?.note || n?.starred) {
+          html += `<td style="background:#f5eeff;">${n.starred?'⭐ ':''}${(n.note||'').replace(/</g,'&lt;')}</td>`;
+        } else {
+          html += '<td style="background:#f5eeff;"><span class="pg-empty">—</span></td>';
+        }
+      });
+      html += '</tr>';
+    }
+
+    html += '</tbody></table>';
+
+    const clientName = document.getElementById('export-email-input').selectedOptions[0]
+      ?.textContent?.split('(')[0]?.trim() || email;
+    const totalEnt = allDates.reduce((s,d) => s + sorted[d].length, 0);
+    wrap.innerHTML = `<p style="font-size:0.8rem;color:var(--brown-light);margin-bottom:8px;">
+      <strong>${clientName}</strong> · ${allDates.length} días · ${totalEnt} entradas</p>${html}`;
+    wrap.style.display = 'block';
+
+  } catch(e) {
+    fbEl.className='feedback error'; fbEl.style.display='block';
+    fbEl.textContent='❌ Error: ' + e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = '👁 Ver en pantalla';
+  }
 }
 
 async function exportDiarioExcel(btn) {
