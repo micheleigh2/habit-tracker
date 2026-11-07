@@ -8,6 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
   <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -446,6 +447,7 @@
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
       <button class="btn-save" onclick="viewPeriodGrid(this)" style="max-width:220px;">👁 Ver en pantalla</button>
       <button class="btn-save" id="btn-export" onclick="exportDiarioExcel(this)" style="max-width:220px;background:var(--brown-mid);">⬇ Descargar Excel</button>
+      <button class="btn-save" onclick="recompressClientPhotos(this)" style="max-width:240px;background:#7c8c5c;" title="Recomprime las fotos antiguas (base64) del diario de esta clienta para liberar espacio en Firestore">🔧 Comprimir fotos antiguas</button>
     </div>
     <div class="feedback" id="export-feedback" style="margin-top:12px;"></div>
     <!-- Grilla del período -->
@@ -2152,6 +2154,93 @@ function initExportDropdown() {
   const monthAgo = (() => { const d = new Date(); d.setDate(d.getDate()-29); return d.toISOString().slice(0,10); })();
   document.getElementById('export-date-from').value = monthAgo;
   document.getElementById('export-date-to').value   = today;
+}
+
+async function recompressClientPhotos(btn) {
+  const email = document.getElementById('export-email-input').value.trim().toLowerCase();
+  const fbEl  = document.getElementById('export-feedback');
+  fbEl.className = 'feedback'; fbEl.style.display = 'none';
+
+  if (!email) { fbEl.className='feedback error'; fbEl.style.display='block'; fbEl.textContent='⚠️ Selecciona una clienta primero.'; return; }
+
+  const ok = confirm(`¿Recomprimir todas las fotos del diario de ${email}?\n\nEsto reduce el tamaño del documento para que pueda volver a guardar entradas. Las fotos se van a ver un poco más pequeñas pero se conservan todas.`);
+  if (!ok) return;
+
+  btn.disabled = true; btn.textContent = 'Comprimiendo...';
+  fbEl.className = 'feedback'; fbEl.style.display = 'block';
+  fbEl.textContent = '⏳ Cargando documento...';
+
+  try {
+    const docId = adminEmailToDocId(email);
+    const snap  = await db.collection('diario').doc(docId).get();
+    if (!snap.exists) { fbEl.textContent = '⚠️ No hay diario para esta clienta.'; return; }
+
+    const dData = snap.data() || {};
+
+    // Función de compresión en canvas (200px, 0.4 calidad)
+    function recompressBase64(dataUrl) {
+      return new Promise(resolve => {
+        // Solo recomprimir base64 (no URLs de Storage)
+        if (!dataUrl || !dataUrl.startsWith('data:')) { resolve(dataUrl); return; }
+        const img = new Image();
+        img.onload = () => {
+          const MAX = 200;
+          const ratio = Math.min(1, MAX / Math.max(img.width, img.height));
+          const c = document.createElement('canvas');
+          c.width  = Math.round(img.width  * ratio);
+          c.height = Math.round(img.height * ratio);
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          resolve(c.toDataURL('image/jpeg', 0.4));
+        };
+        img.onerror = () => resolve(dataUrl); // si falla, mantener original
+        img.src = dataUrl;
+      });
+    }
+
+    // Recorrer todos los días y entradas con foto
+    const dateKeys = Object.keys(dData).filter(k => Array.isArray(dData[k]));
+    let totalFotos = 0, comprimidas = 0;
+    const updates = {};
+
+    for (const d of dateKeys) {
+      const entries = dData[d];
+      let changed = false;
+      const newEntries = [];
+      for (const e of entries) {
+        if (e.photo && e.photo.startsWith('data:')) {
+          totalFotos++;
+          fbEl.textContent = `⏳ Comprimiendo foto ${totalFotos}...`;
+          const newPhoto = await recompressBase64(e.photo);
+          const sizeBefore = Math.round(e.photo.length / 1024);
+          const sizeAfter  = Math.round(newPhoto.length / 1024);
+          if (sizeAfter < sizeBefore) { comprimidas++; newEntries.push({ ...e, photo: newPhoto }); changed = true; }
+          else newEntries.push(e);
+        } else {
+          newEntries.push(e);
+        }
+      }
+      if (changed) updates[d] = newEntries;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      fbEl.className = 'feedback success'; fbEl.style.display = 'block';
+      fbEl.textContent = `✅ No había fotos base64 para comprimir (${totalFotos} fotos ya están optimizadas).`;
+      return;
+    }
+
+    fbEl.textContent = `⏳ Guardando ${comprimidas} fotos comprimidas...`;
+    await db.collection('diario').doc(docId).update(updates);
+
+    fbEl.className = 'feedback success';
+    fbEl.textContent = `✅ Listo. ${comprimidas} de ${totalFotos} fotos comprimidas. El documento de ${email} ahora tiene mucho más espacio.`;
+
+  } catch(e) {
+    console.error(e);
+    fbEl.className = 'feedback error';
+    fbEl.textContent = '❌ Error: ' + e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = '🔧 Comprimir fotos antiguas';
+  }
 }
 
 async function viewPeriodGrid(btn) {
