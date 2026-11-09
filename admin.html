@@ -2441,6 +2441,20 @@ async function exportDiarioExcel(btn) {
     });
     rn++;
 
+    // ── Feedback coach (arriba para ver rápido qué días son importantes) ──
+    ejWs.getRow(rn).height = 48;
+    const fbR = ejWs.getRow(rn);
+    fbR.getCell(1).value = 'Feedback coach';
+    eStyle(fbR.getCell(1), {bold:true,italic:true,color:{argb:EC.brownMid},size:10},
+      EC.feedbackBg, {vertical:'top',horizontal:'center'});
+    allDates.forEach((d,j) => {
+      const cc = fbR.getCell(j+2);
+      cc.value = coachFB[d] || '';
+      eStyle(cc, {italic:true,color:{argb:EC.brownMid},size:10}, EC.feedbackBg,
+        {wrapText:true,vertical:'top'});
+    });
+    rn++;
+
     // ── Filas de entradas ──
     for (let i = 0; i < maxEnt; i++) {
       const alt       = i % 2 === 0;
@@ -2499,20 +2513,6 @@ async function exportDiarioExcel(btn) {
         rn++;
       }
     }
-
-    // ── Feedback coach ──
-    ejWs.getRow(rn).height = 48;
-    const fbR = ejWs.getRow(rn);
-    fbR.getCell(1).value = 'Feedback coach';
-    eStyle(fbR.getCell(1), {bold:true,italic:true,color:{argb:EC.brownMid},size:10},
-      EC.feedbackBg, {vertical:'top',horizontal:'center'});
-    allDates.forEach((d,j) => {
-      const cc = fbR.getCell(j+2);
-      cc.value = coachFB[d] || '';
-      eStyle(cc, {italic:true,color:{argb:EC.brownMid},size:10}, EC.feedbackBg,
-        {wrapText:true,vertical:'top'});
-    });
-    rn++;
 
     // ── Separador ──
     ejWs.getRow(rn).height = 6; rn++;
